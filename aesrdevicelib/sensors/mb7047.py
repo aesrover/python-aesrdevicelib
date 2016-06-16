@@ -26,9 +26,7 @@ class MB7047(sensor.Sensor):
         
     # Main read function
     def read(self, *args, **kwargs):
-        self.readCM(*args, **kwargs)
+        return self.readCM(*args, **kwargs)
         
     def readM(self, *args, **kwargs):
-        depth = self.readCM(*args, **kwargs)
-        return depth/100
-
+        return (self.readCM(*args, **kwargs))/100
