@@ -15,7 +15,7 @@ class MCP9808(sensor.Sensor):
     _REG_MANUF_ID           = 0x06
     _REG_DEVICE_ID          = 0x07
     
-    def __init__(self, i2cAddress= 0x18, *args, **kwargs):
+    def __init__(self, i2cAddress= _DEFAULT_I2C_ADDRESS, *args, **kwargs):
         super(MCP9808, self).__init__(self, *args, **kwargs)
     
     def readC(self):

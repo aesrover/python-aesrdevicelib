@@ -5,10 +5,12 @@ import time
 class MB7047(sensor.Sensor):
     '''Library for the MaxBotix 12CXL-MaxSonar-WR Sensor'''
     
+    _DEFAULT_I2C_ADDRESS = 112
+    
     _REG_START_WRITE = 81    # register address to take a measurement
     _REG_START_MEASURE = 0   # register address to read back measurement
     
-    def __init__(self, i2cAddress= 112, *args, **kwargs):
+    def __init__(self, i2cAddress= _DEFAULT_I2C_ADDRESS, *args, **kwargs):
         super(MB7047, self).__init__(self, *args, **kwargs)
     
     # Read depth in centimeters        
