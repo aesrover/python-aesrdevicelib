@@ -2,6 +2,7 @@ import smbus
 from . import sensor
 
 class ADS1115(sensor.Sensor):
+    '''Library for the Adafruit ADS1115 ADC'''
     
     _DEFAULT_I2C_ADDRESS = 0x48
     
