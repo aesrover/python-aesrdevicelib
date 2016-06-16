@@ -4,7 +4,7 @@ from . import sensor
 class ADS1115(sensor.Sensor):
         
     def __init__(self, i2cAddress= 0x48, *args, **kwargs):
-        super(self).__init__(i2cAddress= i2cAddress, *args, **kwargs)    
+        super(ADS1115, self).__init__(self, *args, **kwargs)
         
         new_config = 0b0100001110000011
         # This config: Enables continuos reading, Disables comparator,
@@ -19,4 +19,4 @@ class ADS1115(sensor.Sensor):
         value = self.bus.read_word_data(self.i2cAddress, 0x00) & 0xFFFF
         # Swap byte order from little endian to big endian
         value = ((value & 0xFF) << 8) | (value >> 8)
-        print('Raw ADC value: 0x{0:04X}'.format(value))
+        return value

@@ -9,7 +9,7 @@ class MB7047(sensor.Sensor):
     _REG_START_MEASURE = 0   # register address to read back measurement
     
     def __init__(self, i2cAddress= 112, *args, **kwargs):
-        super(self).__init__(i2cAddress=i2cAddress, *args, **kwargs)
+        super(MB7047, self).__init__(self, *args, **kwargs)
     
     # Read depth in centimeters        
     def readCM(self):
