@@ -1,4 +1,3 @@
-import smbus
 from . import sensor
 
 class MCP9808(sensor.Sensor):
