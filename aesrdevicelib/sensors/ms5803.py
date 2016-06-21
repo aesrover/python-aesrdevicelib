@@ -57,19 +57,19 @@ class MS5803(sensor.Sensor):
         # Read digital pressure value
         # Read data back from 0x00(0), 3 bytes
         # D1 MSB2, D1 MSB1, D1 LSB
-        value = self.bus.read_i2c_block_data(i2cAddress, 0x00, 3)
+        value = self.bus.read_i2c_block_data(self.i2cAddress, 0x00, 3)
         D1 = (value[0] << 16)  + (value[1] << 8) + value[2]
         
         # MS5803_14BA address, i2cAddress(118)
         #		0x50(64)	Temperature conversion(OSR = 256) command
-        self.bus.write_byte(i2cAddress, 0x50)
+        self.bus.write_byte(self.i2cAddress, 0x50)
         
         time.sleep(0.5)
         
         # Read digital temperature value
         # Read data back from 0x00(0), 3 bytes
         # D2 MSB2, D2 MSB1, D2 LSB
-        value = self.bus.read_i2c_block_data(i2cAddress, 0x00, 3)
+        value = self.bus.read_i2c_block_data(self.i2cAddress, 0x00, 3)
         D2 = (value[0] << 16)  + (value[1] << 8) + value[2]
         
         dT = D2 - C5 * (2**8)
