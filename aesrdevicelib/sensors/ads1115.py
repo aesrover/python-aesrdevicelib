@@ -17,7 +17,7 @@ class ADS1115(sensor.Sensor):
         # https://cdn-shop.adafruit.com/datasheets/ads1115.pdf (18-19)        
         
         # Sleep to allow for data aquisition
-        time.sleep(0.1)
+        time.sleep(1)
         
         # Read two bytes from register 00, the ADC value
         value = self.bus.read_word_data(self.i2cAddress, 0x00) & 0xFFFF
