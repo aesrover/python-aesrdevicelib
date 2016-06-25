@@ -49,7 +49,7 @@ class MS5803(sensor.Sensor):
         C6 = (data[0] << 8) + data[1]
         
         # MS5803_14BA address, 0x76(118)
-        # 0x40(64)	Pressure conversion(OSR = 256) command
+        # 0x48(72)	Pressure conversion(OSR = 4096) command
         self.bus.write_byte(self.i2cAddress, 0x40)
         
         time.sleep(0.5)
@@ -61,7 +61,7 @@ class MS5803(sensor.Sensor):
         D1 = (value[0] << 16)  + (value[1] << 8) + value[2]
         
         # MS5803_14BA address, i2cAddress(118)
-        #		0x50(64)	Temperature conversion(OSR = 256) command
+        # 0x58(88)	Temperature conversion(OSR = 4096) command
         self.bus.write_byte(self.i2cAddress, 0x50)
         
         time.sleep(0.5)
