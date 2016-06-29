@@ -5,5 +5,6 @@ class Sensor(object):
         self.bus = smbus.SMBus(bus)
         self.i2cAddress = i2cAddress
         
-        # Test if device is connected:
-        self.bus.read_byte(i2cAddress)
+        # Test if device is connected by transmitting just the slave address
+        # and checking for an ACK from the device:
+        self.bus.write_quick(i2cAddress)
