@@ -29,7 +29,7 @@ class GPSRead:
                 #  print report
                 if report['class'] == 'TPV':
                     if hasattr(report, 'lat'):
-                        self.locationData = report
+                        self.locationData = {"lat": report.lat, "lon": report.lon}
                         self.timeOfRead = time.time()
             except KeyError:
                 pass
