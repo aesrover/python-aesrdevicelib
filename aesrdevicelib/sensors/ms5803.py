@@ -10,47 +10,54 @@ class MS5803(sensor.Sensor):
     
     _DEFAULT_I2C_ADDRESS = 0x76
     
-    _REG_START_WRITE = 81    # Register address to take a measurement
-    _REG_START_MEASURE = 0   # Register address to read back measurement
+    C1 = 0          # Pressure sensitivy
+    C2 = 0          # Pressure offset
+    C3 = 0          # Temperature coefficient of pressure sensitivity
+    C4 = 0          # Temperature coefficient of pressure offset
+    C5 = 0          # Reference temperature
+    C6 = 0          # Temperature coefficient of the temperature
+    
     
     def __init__(self, i2cAddress= _DEFAULT_I2C_ADDRESS, *args, **kwargs):
         super(MS5803, self).__init__(i2cAddress, *args, **kwargs)
         
         # MS5803_14BA address, 0x76(118)
         # 0x1E(30)	Reset command
+        # Sent once after power-on
         self.bus.write_byte(i2cAddress, 0x1E) 
+        
+        # ---- Read 12 bytes of calibration data ----
+        # Read pressure sensitivity
+        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xA2, 2)
+        self.C1 = (data[0] << 8) + data[1]
+        
+        # Read pressure offset
+        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xA4, 2)
+        self.C2 = (data[0] << 8) + data[1]
+        
+        # Read temperature coefficient of pressure sensitivity
+        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xA6, 2)
+        self.C3 = (data[0] << 8) + data[1]
+        
+        # Read temperature coefficient of pressure offset
+        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xA8, 2)
+        self.C4 = (data[0] << 8) + data[1]
+        
+        # Read reference temperature
+        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xAA, 2)
+        self.C5 = (data[0] << 8) + data[1]
+        
+        # Read temperature coefficient of the temperature
+        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xAC, 2)
+        self.C6 = (data[0] << 8) + data[1]
     
     # Read function, returns a dictionary of the pressure and temperature values      
     def read(self):
         
-        # Read 12 bytes of calibration data
-        # Read pressure sensitivity
-        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xA2, 2)
-        C1 = (data[0] << 8) + data[1]
-        
-        # Read pressure offset
-        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xA4, 2)
-        C2 = (data[0] << 8) + data[1]
-        
-        # Read temperature coefficient of pressure sensitivity
-        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xA6, 2)
-        C3 = (data[0] << 8) + data[1]
-        
-        # Read temperature coefficient of pressure offset
-        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xA8, 2)
-        C4 = (data[0] << 8) + data[1]
-        
-        # Read reference temperature
-        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xAA, 2)
-        C5 = (data[0] << 8) + data[1]
-        
-        # Read temperature coefficient of the temperature
-        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xAC, 2)
-        C6 = (data[0] << 8) + data[1]
-        
+        #---- Read digital pressure and temperature data ----
         # MS5803_14BA address, 0x76(118)
         # 0x48(72)	Pressure conversion(OSR = 4096) command
-        self.bus.write_byte(self.i2cAddress, 0x40)
+        self.bus.write_byte(self.i2cAddress, 0x48)
         
         time.sleep(0.5)
         
@@ -62,7 +69,7 @@ class MS5803(sensor.Sensor):
         
         # MS5803_14BA address, i2cAddress(118)
         # 0x58(88)	Temperature conversion(OSR = 4096) command
-        self.bus.write_byte(self.i2cAddress, 0x50)
+        self.bus.write_byte(self.i2cAddress, 0x58)
         
         time.sleep(0.5)
         
@@ -72,10 +79,20 @@ class MS5803(sensor.Sensor):
         value = self.bus.read_i2c_block_data(self.i2cAddress, 0x00, 3)
         D2 = (value[0] << 16)  + (value[1] << 8) + value[2]
         
-        dT = D2 - C5 * (2**8)
-        TEMP = 2000 + dT * C6 / (2**23)
-        OFF = C2 * (2**16) + (C4 * dT) / (2**7)
-        SENS = C1 * (2**15) + (C3 * dT ) / (2**8)
+        # ---- Calculate temperature ----
+        dT = D2 - self.C5 * (2**8)
+        TEMP = 2000 + dT * self.C6 / (2**23)
+        
+        # ---- Calculated temperature compensated pressure ----
+        OFF = self.C2 * (2**16) + (self.C4 * dT) / (2**7)
+        SENS = self.C1 * (2**15) + (self.C3 * dT ) / (2**8)
+        
+        # Temperature compensated pressure (not the most accurate)
+        # Use the flowchart for optimum accuracy
+        # Pressure: P = (D1 * SENS / ((2**21) - OFF)) / (2**13)
+        
+        
+        # ---- Second order temperature compensation (flowchart)
         T2 = 0
         OFF2 = 0
         SENS2 = 0
