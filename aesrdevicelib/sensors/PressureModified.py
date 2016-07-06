@@ -7,14 +7,14 @@ class MS5837(sensor.Sensor):
     PROM_READ = 0xA2
     _DEFAULT_I2C_ADDRESS = 0x76
     
-    # PROM Calibration values stored in the C array
-    # C[0]       always equals 0 - not used
-    # C[1]       Pressure sensitivy
-    # C[2]       Pressure offset
-    # C[3]       Temperature coefficient of pressure sensitivity
-    # C[4]       Temperature coefficient of pressure offset
-    # C[5]       Reference temperature
-    # C[6]       Temperature coefficient of the temperature
+    '''
+    C1 = 0          # Pressure sensitivy
+    C2 = 0          # Pressure offset
+    C3 = 0          # Temperature coefficient of pressure sensitivity
+    C4 = 0          # Temperature coefficient of pressure offset
+    C5 = 0          # Reference temperature
+    C6 = 0          # Temperature coefficient of the temperature
+    '''
     
     C = []
     
@@ -30,36 +30,6 @@ class MS5837(sensor.Sensor):
         for i in range(6):
             data = self.bus.read_i2c_block_data(self.i2cAddress, self.PROM_READ+(i*2), 2) 
             self.C[i+1] = (data[0] << 8) + data[1]
-            
-        '''
-        OLD VERSION
-        
-        # ---- Read 12 bytes of calibration data ----
-        # Read pressure sensitivity
-        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xA2, 2)
-        self.C1 = (data[0] << 8) + data[1]
-        
-        # Read pressure offset
-        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xA4, 2)
-        self.C2 = (data[0] << 8) + data[1]
-        
-        # Read temperature coefficient of pressure sensitivity
-        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xA6, 2)
-        self.C3 = (data[0] << 8) + data[1]
-        
-        # Read temperature coefficient of pressure offset
-        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xA8, 2)
-        self.C4 = (data[0] << 8) + data[1]
-        
-        # Read reference temperature
-        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xAA, 2)
-        self.C5 = (data[0] << 8) + data[1]
-        
-        # Read temperature coefficient of the temperature
-        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xAC, 2)
-        self.C6 = (data[0] << 8) + data[1]
-        
-        '''
     
             
     # Read function, returns a dictionary of the pressure and temperature values      
