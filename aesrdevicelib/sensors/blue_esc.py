@@ -1,5 +1,4 @@
 from . import sensor
-import time
 
 
 class BlueESC(sensor.Sensor):
