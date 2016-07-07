@@ -16,5 +16,5 @@ class BlueESC(sensor.Sensor):
         self.bus.write_word_data(self._DEFAULT_I2C_ADDRESS, self._THROTTLE_REGISTER, power)
 
     def startPower(self, speed):
-        self.startup()
+        self.start()
         self.setPower(speed)
