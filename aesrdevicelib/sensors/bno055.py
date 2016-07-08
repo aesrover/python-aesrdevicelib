@@ -219,7 +219,6 @@ class BNO055(sensor.Sensor):
         self.setMode(mode)
         time.sleep(0.02)
 
-        return True
 
     def setMode(self, mode):
         self.deviceMode = mode
