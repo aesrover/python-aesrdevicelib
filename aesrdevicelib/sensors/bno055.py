@@ -272,11 +272,10 @@ class BNO055(sensor.Sensor):
         return tuple([i * (1.0 / (1 << 14)) for i in wxyz])
 
     def readBytes(self, register, numBytes=1):
-        return self._bus.read_i2c_block_data(self._address, register, numBytes)
+        return self.bus.read_i2c_block_data(self.i2cAddress, register, numBytes)
 
     def writeBytes(self, register, byteVals):
-        return self._bus.write_i2c_block_data(self._address, register, byteVals)
-
+        return self.bus.write_i2c_block_data(self.i2cAddress, register, byteVals)
 
 if __name__ == '__main__':
     bno = BNO055()
