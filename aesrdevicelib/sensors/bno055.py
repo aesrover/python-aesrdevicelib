@@ -185,7 +185,7 @@ class BNO055(sensor.Sensor):
 
     # REGISTER DEFINITION END
 
-    _DEFAULT_I2C_ADDRESS = 0x48
+    _DEFAULT_I2C_ADDRESS = 0x28
     
     def __init__(self, i2cAddress= _DEFAULT_I2C_ADDRESS, mode = None, *args, **kwargs):
         super(BNO055, self).__init__(i2cAddress, *args, **kwargs)
