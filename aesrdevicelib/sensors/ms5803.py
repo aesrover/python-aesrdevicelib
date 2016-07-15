@@ -13,7 +13,7 @@ class MS5803(sensor.Sensor):
     
     
     
-    '''Version 2 - not working
+    '''Version 2'''
     # PROM Calibration values stored in the C array
     # C[0]       always equals 0 - not used
     # C[1]       Pressure sensitivy
@@ -24,10 +24,9 @@ class MS5803(sensor.Sensor):
     # C[6]       Temperature coefficient of the temperature
     
     C = []
-    '''
     
     
-    '''Version 1 - working'''
+    '''Version 1 - working
     # PROM Calibration values stored in the C array
     C1 = 0        #Pressure sensitivy
     C2 = 0        #Pressure offset
@@ -35,6 +34,7 @@ class MS5803(sensor.Sensor):
     C4 = 0        #Temperature coefficient of pressure offset
     C5 = 0      #Reference temperature
     C6 = 0      #Temperature coefficient of the temperature
+    '''
     
     def __init__(self, i2cAddress= _DEFAULT_I2C_ADDRESS, *args, **kwargs):
         super(MS5803, self).__init__(i2cAddress, *args, **kwargs)
@@ -46,18 +46,21 @@ class MS5803(sensor.Sensor):
         
         # ---- Read 12 bytes of calibration data ----
         
-        '''Version 2 - not working
+        '''Version 2 '''
         self.C.append(0)
         for i in range(6):
             data = self.bus.read_i2c_block_data(self.i2cAddress, self.PROM_READ+(i*2), 2)
             self.C.append((data[0] << 8) + data[1])
-            
-        '''  
+
         
+<<<<<<< Updated upstream
         # Let it wake up
         time.sleep(0.1)
         
         ''' Version 1, Older code - works ''' 
+=======
+        ''' Version 1, Older code - works 
+>>>>>>> Stashed changes
         # Read pressure sensitivity
         data = self.bus.read_i2c_block_data(self.i2cAddress, 0xA2, 2)
         self.C1 = (data[0] << 8) + data[1]
@@ -81,7 +84,7 @@ class MS5803(sensor.Sensor):
         # Read temperature coefficient of the temperature
         data = self.bus.read_i2c_block_data(self.i2cAddress, 0xAC, 2)
         self.C6 = (data[0] << 8) + data[1]
-        
+        '''
             
     # Read function, returns a dictionary of the pressure and temperature values      
     def read(self):
@@ -113,7 +116,7 @@ class MS5803(sensor.Sensor):
         
         
         
-        '''Version 2 - not working 
+        '''Version 2'''
         # ---- Calculate temperature ----
         dT = D2 - self.C[5] * (2**8)
         TEMP = 2000 + dT * self.C[6] / (2**23)
@@ -121,9 +124,9 @@ class MS5803(sensor.Sensor):
         # ---- Calculated temperature compensated pressure ----
         OFF = self.C[2] * (2**16) + (self.C[4] * dT) / (2**7)
         SENS = self.C[1] * (2**15) + (self.C[3] * dT ) / (2**8)
-        '''
         
-        '''Version 1 - working'''
+        
+        '''Version 1 - working
         # ---- Calculate temperature ----
         dT = D2 - self.C5 * (2**8)
         TEMP = 2000 + dT * self.C6 / (2**23)
@@ -131,7 +134,7 @@ class MS5803(sensor.Sensor):
         # ---- Calculated temperature compensated pressure ----
         OFF = self.C2 * (2**16) + (self.C4 * dT) / (2**7)
         SENS = self.C1 * (2**15) + (self.C3 * dT ) / (2**8)
-        
+        '''
         
         # Temperature compensated pressure (not the most accurate)
         # Use the flowchart for optimum accuracy
