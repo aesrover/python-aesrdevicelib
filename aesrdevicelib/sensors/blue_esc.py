@@ -10,10 +10,10 @@ class BlueESC(sensor.Sensor):
         super(BlueESC, self).__init__(i2cAddress, *args, **kwargs)
 
     def start(self):
-        self.bus.write_word_data(self._DEFAULT_I2C_ADDRESS, self._THROTTLE_REGISTER, 0)
+        self.bus.write_word_data(self.i2cAddress, self._THROTTLE_REGISTER, 0)
 
     def setPower(self, power):
-        self.bus.write_word_data(self._DEFAULT_I2C_ADDRESS, self._THROTTLE_REGISTER, power)
+        self.bus.write_word_data(self.i2cAddress, self._THROTTLE_REGISTER, power)
 
     def startPower(self, speed):
         self.start()

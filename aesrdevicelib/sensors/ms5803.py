@@ -44,6 +44,9 @@ class MS5803(sensor.Sensor):
         # Sent once after power-on
         self.bus.write_byte(i2cAddress, 0x1E) 
         
+        # Let it wake up
+        time.sleep(0.1)
+        
         # ---- Read 12 bytes of calibration data ----
         
         '''Version 2 '''
@@ -51,16 +54,8 @@ class MS5803(sensor.Sensor):
         for i in range(6):
             data = self.bus.read_i2c_block_data(self.i2cAddress, self.PROM_READ+(i*2), 2)
             self.C.append((data[0] << 8) + data[1])
-
         
-<<<<<<< Updated upstream
-        # Let it wake up
-        time.sleep(0.1)
-        
-        ''' Version 1, Older code - works ''' 
-=======
         ''' Version 1, Older code - works 
->>>>>>> Stashed changes
         # Read pressure sensitivity
         data = self.bus.read_i2c_block_data(self.i2cAddress, 0xA2, 2)
         self.C1 = (data[0] << 8) + data[1]

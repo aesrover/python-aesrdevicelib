@@ -6,7 +6,7 @@ class VernierODO(ads1115.ADS1115):
         super(VernierODO, self).__init__(*args, **kwargs)
 
     def convertMGL(self, adc):
-        c = adc * (5/26665.8528646)  # Converts to a 0-5V range
+        c = 6.144 * adc / (pow(2, 15) - 1)  # Converts to a voltage
         output = (c * 4.444) - .4444  # Converts to mg/L based of Vernier's scale
         return output
 
