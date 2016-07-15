@@ -32,7 +32,7 @@ class TSYS01(sensor.Sensor):
         # --- Prom Read Sequence ---
         for i in range(5):            
             data = self.bus.read_i2c_block_data(self.i2cAddress, self.PROM_READ+(10-i*2), 2)
-            self.C[i] = (data[0] << 8) + data[1]
+            self.C.append((data[0] << 8) + data[1])
             
     def read(self):
         
