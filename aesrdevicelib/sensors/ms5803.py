@@ -33,7 +33,7 @@ class MS5803(sensor.Sensor):
         # ---- Read 12 bytes of calibration data ----
         self.C.append(0)
         for i in range(6):
-            data = self.bus.read_i2c_block_data(self.i2cAdress, self.PROM_READ+(i*2), 2)
+            data = self.bus.read_i2c_block_data(self.i2cAddress, self.PROM_READ+(i*2), 2)
             self.C.append((data[0] << 8) + data[1])
             
         '''  
