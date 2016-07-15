@@ -54,6 +54,9 @@ class MS5803(sensor.Sensor):
             
         '''  
         
+        # Let it wake up
+        time.sleep(0.1)
+        
         ''' Version 1, Older code - works ''' 
         # Read pressure sensitivity
         data = self.bus.read_i2c_block_data(self.i2cAddress, 0xA2, 2)
