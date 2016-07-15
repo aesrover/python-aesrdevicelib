@@ -29,12 +29,12 @@ class MS5803(sensor.Sensor):
     
     '''Version 1 - working'''
     # PROM Calibration values stored in the C array
-    # C1       Pressure sensitivy
-    # C2       Pressure offset
-    # C3       Temperature coefficient of pressure sensitivity
-    # C4       Temperature coefficient of pressure offset
-    # C5       Reference temperature
-    # C6       Temperature coefficient of the temperature
+    C1 = 0        #Pressure sensitivy
+    C2 = 0        #Pressure offset
+    C3 = 0        #Temperature coefficient of pressure sensitivity
+    C4 = 0        #Temperature coefficient of pressure offset
+    C5 = 0      #Reference temperature
+    C6 = 0      #Temperature coefficient of the temperature
     
     def __init__(self, i2cAddress= _DEFAULT_I2C_ADDRESS, *args, **kwargs):
         super(MS5803, self).__init__(i2cAddress, *args, **kwargs)
