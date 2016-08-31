@@ -6,6 +6,7 @@ class ADS1115(sensor.Sensor):
     '''Library for the Adafruit ADS1115 ADC'''
 
     _DEFAULT_I2C_ADDRESS = 0x48
+    FS = 6.144
 
     def __init__(self, i2cAddress=_DEFAULT_I2C_ADDRESS, *args, **kwargs):
         super(ADS1115, self).__init__(i2cAddress, *args, **kwargs)
@@ -27,3 +28,10 @@ class ADS1115(sensor.Sensor):
         # Swap byte order from little endian to big endian
         value = ((value & 0xFF) << 8) | (value >> 8)
         return value
+
+    def asVolt(self, adc):
+        return self.FS * adc / (pow(2, 15) - 1)
+
+    def readVolt(self, *args, **kwargs):
+        # Converts to a voltage
+        return self.asVolt(self.read(*args, **kwargs))
