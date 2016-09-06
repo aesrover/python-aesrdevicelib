@@ -24,7 +24,7 @@ class I2cDevice(object):
         # Return a modified function if the attribute is a function:
         if hasattr(attr, '__call__'):
             def newfunc(*args, **kwargs):
-                if fromBus and 'addr' in attr.__code__.co_varnames:
+                if fromBus:
                     result = attr(*args, addr=self.i2cAddress, **kwargs)
 
                 else:
