@@ -25,7 +25,7 @@ class I2cDevice(object):
         if hasattr(attr, '__call__'):
             def newfunc(*args, **kwargs):
                 if fromBus:
-                    result = attr(*args, addr=self.i2cAddress, **kwargs)
+                    result = attr(self.i2cAddress, *args, **kwargs)
 
                 else:
                     result = attr(*args, **kwargs)
