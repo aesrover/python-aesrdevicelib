@@ -12,6 +12,8 @@ class I2cDevice(object):
         except AttributeError:
             try:
                 attr = getattr(self.bus, name)
+                if name.startswith('__'):
+                    raise AttributeError
                 fromBus = True
             except AttributeError:
                 textClass = self.__class__
