@@ -1,0 +1,40 @@
+import smbus
+
+
+class I2cDevice(smbus.SMBus):
+    # Add i2cAddress to parent class calls
+    def __getattribute__(self, name):
+        # Get attribute (first from the base class, then the current class if
+        #   it fails)
+        fromSuper = True
+        try:
+            attr = getattr(super(I2cDevice, self), name)
+        except AttributeError:
+            fromSuper = False
+            attr = object.__getattribute__(self, name)
+
+        # Return a modified function if the attribute is a function:
+        if hasattr(attr, '__call__'):
+            def newfunc(*args, **kwargs):
+                if fromSuper and 'addr' in attr.__code__.co_varnames:
+                    result = attr(*args, addr=self.i2cAddress, **kwargs)
+
+                else:
+                    result = attr(*args, **kwargs)
+                return result
+
+            # Return a function or the original attribute depending on what
+            #   type the requested attribute was
+            return newfunc
+        else:
+            return attr
+
+    def __init__(self, i2cAddress, bus=1, testDevice=True):
+        # self.bus = smbus.SMBus(bus)
+        self.bus = super(I2cDevice, self).__init__(bus)
+        self.i2cAddress = i2cAddress
+
+        # Test if device is connected by transmitting just the slave address
+        # and checking for an ACK from the device:
+        if testDevice:
+            self.bus.write_quick(i2cAddress)
