@@ -34,4 +34,4 @@ class MCP9808(sensor.Sensor):
         return (self.readC() * 9/5) + 32
     
     def read(self, *args, **kwargs):
-        self.readC(*args, **kwargs)
+        return self.readC(*args, **kwargs)
