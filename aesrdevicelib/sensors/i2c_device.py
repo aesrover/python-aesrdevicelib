@@ -6,7 +6,7 @@ class I2cDevice(object):
     def __getattribute__(self, name):
         # Get attribute (first from the base class, then the current class if
         #   it fails)
-        fromBus = False
+        from_bus = False
         try:
             attr = object.__getattribute__(self, name)
         except AttributeError:
@@ -14,17 +14,17 @@ class I2cDevice(object):
                 attr = getattr(self.bus, name)
                 if name.startswith('__'):
                     raise AttributeError
-                fromBus = True
+                from_bus = True
             except AttributeError:
-                textClass = self.__class__
+                text_class = self.__class__
                 raise AttributeError("{}.{} object has no attribute '{}'"
-                                     .format(textClass.__module__,
-                                             textClass.__name__, name))
+                                     .format(text_class.__module__,
+                                             text_class.__name__, name))
 
         # Return a modified function if the attribute is a function:
         if hasattr(attr, '__call__'):
             def newfunc(*args, **kwargs):
-                if fromBus:
+                if from_bus:
                     result = attr(self.i2cAddress, *args, **kwargs)
 
                 else:
@@ -37,11 +37,11 @@ class I2cDevice(object):
         else:
             return attr
 
-    def __init__(self, i2cAddress, bus=1, testDevice=True):
+    def __init__(self, i2cAddress, bus=1, test_device=True):
         self.bus = smbus.SMBus(bus)
         self.i2cAddress = i2cAddress
 
         # Test if device is connected by transmitting just the slave address
         # and checking for an ACK from the device:
-        if testDevice:
+        if test_device:
             self.bus.write_quick(i2cAddress)
