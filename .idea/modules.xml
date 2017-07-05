@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/device-library.iml" filepath="$PROJECT_DIR$/.idea/device-library.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/python-aesrdevicelib.iml" filepath="$PROJECT_DIR$/.idea/python-aesrdevicelib.iml" />
     </modules>
   </component>
 </project>
