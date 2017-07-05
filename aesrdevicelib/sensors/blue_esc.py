@@ -1,7 +1,7 @@
-from . import sensor
+from . import i2c_device
 
 
-class BlueESC(sensor.Sensor):
+class BlueESC(i2c_device.I2cDevice):
     """Library for the Blue Robotics BlueESC"""
     _DEFAULT_I2C_ADDRESS = 0x29
     _THROTTLE_REGISTER = 0x00
@@ -10,10 +10,10 @@ class BlueESC(sensor.Sensor):
         super(BlueESC, self).__init__(i2cAddress, *args, **kwargs)
 
     def start(self):
-        self.bus.write_word_data(self.i2cAddress, self._THROTTLE_REGISTER, 0)
+        self.write_word_data(self._THROTTLE_REGISTER, 0)
 
     def setPower(self, power):
-        self.bus.write_word_data(self.i2cAddress, self._THROTTLE_REGISTER, power)
+        self.write_word_data(self._THROTTLE_REGISTER, power)
 
     def startPower(self, speed):
         self.start()
