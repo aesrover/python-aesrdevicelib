@@ -2,10 +2,10 @@
 # Link to original source (contains some errors that were fixed in this version): 
 #            https://github.com/ControlEverythingCommunity/MS5803-14BA/blob/master/Python/MS5803_14BA.py  
 
-from . import sensor
+from . import i2c_device
 import time 
 
-class MS5803(sensor.Sensor):
+class MS5803(i2c_device.I2cDevice):
     '''Library for the SparkFun MS5803-12BA Pressure Sensor'''
     
     PROM_READ = 0xA2
@@ -42,7 +42,7 @@ class MS5803(sensor.Sensor):
         # MS5803_14BA address, 0x76(118)
         # 0x1E(30)	Reset command
         # Sent once after power-on
-        self.bus.write_byte(i2cAddress, 0x1E) 
+        self.write_byte(0x1E)
         
         # Let it wake up
         time.sleep(0.1)
@@ -52,32 +52,32 @@ class MS5803(sensor.Sensor):
         '''Version 2 '''
         self.C.append(0)
         for i in range(6):
-            data = self.bus.read_i2c_block_data(self.i2cAddress, self.PROM_READ+(i*2), 2)
+            data = self.read_i2c_block_data(self.PROM_READ+(i*2), 2)
             self.C.append((data[0] << 8) + data[1])
         
         ''' Version 1, Older code - works 
         # Read pressure sensitivity
-        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xA2, 2)
+        data = self.read_i2c_block_data(0xA2, 2)
         self.C1 = (data[0] << 8) + data[1]
         
         # Read pressure offset
-        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xA4, 2)
+        data = self.read_i2c_block_data(0xA4, 2)
         self.C2 = (data[0] << 8) + data[1]
         
         # Read temperature coefficient of pressure sensitivity
-        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xA6, 2)
+        data = self.read_i2c_block_data(0xA6, 2)
         self.C3 = (data[0] << 8) + data[1]
         
         # Read temperature coefficient of pressure offset
-        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xA8, 2)
+        data = self.read_i2c_block_data(0xA8, 2)
         self.C4 = (data[0] << 8) + data[1]
         
         # Read reference temperature
-        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xAA, 2)
+        data = self.read_i2c_block_data(0xAA, 2)
         self.C5 = (data[0] << 8) + data[1]
         
         # Read temperature coefficient of the temperature
-        data = self.bus.read_i2c_block_data(self.i2cAddress, 0xAC, 2)
+        data = self.read_i2c_block_data(0xAC, 2)
         self.C6 = (data[0] << 8) + data[1]
         '''
             
@@ -87,26 +87,26 @@ class MS5803(sensor.Sensor):
         #---- Read digital pressure and temperature data ----
         # MS5803_14BA address, 0x76(118)
         # 0x48(72)	Pressure conversion(OSR = 4096) command
-        self.bus.write_byte(self.i2cAddress, 0x48)
+        self.write_byte(0x48)
         
         time.sleep(0.5)
         
         # Read digital pressure value
         # Read data back from 0x00(0), 3 bytes
         # D1 MSB2, D1 MSB1, D1 LSB
-        value = self.bus.read_i2c_block_data(self.i2cAddress, 0x00, 3)
+        value = self.read_i2c_block_data(0x00, 3)
         D1 = (value[0] << 16)  + (value[1] << 8) + value[2]
         
         # MS5803_14BA address, i2cAddress(118)
         # 0x58(88)	Temperature conversion(OSR = 4096) command
-        self.bus.write_byte(self.i2cAddress, 0x58)
+        self.write_byte(0x58)
         
         time.sleep(0.5)
         
         # Read digital temperature value
         # Read data back from 0x00(0), 3 bytes
         # D2 MSB2, D2 MSB1, D2 LSB
-        value = self.bus.read_i2c_block_data(self.i2cAddress, 0x00, 3)
+        value = self.read_i2c_block_data(0x00, 3)
         D2 = (value[0] << 16)  + (value[1] << 8) + value[2]
         
         

@@ -1,8 +1,8 @@
-from . import sensor
+from . import i2c_device
 import time
 
 
-class ADS1115(sensor.Sensor):
+class ADS1115(i2c_device.I2cDevice):
     '''Library for the Adafruit ADS1115 ADC'''
 
     _DEFAULT_I2C_ADDRESS = 0x48
@@ -14,7 +14,7 @@ class ADS1115(sensor.Sensor):
     def read(self):
         dataRate = 128
         # Write two bytes to the config register
-        self.bus.write_word_data(self.i2cAddress, 0x01, 0b0100000010000011)
+        self.write_word_data(0x01, 0b0100000010000011)
         # This config: Enables continuos conversion, Disables comparator,
         # Sets the analog voltage range to 0 - 6V, and much more!
         # https://cdn-shop.adafruit.com/datasheets/ads1115.pdf (18-19)
@@ -24,7 +24,7 @@ class ADS1115(sensor.Sensor):
         time.sleep(1.0/dataRate+0.0001)
 
         # Read two bytes from register 00, the ADC value
-        value = self.bus.read_i2c_block_data(self.i2cAddress, 0x00, 2)
+        value = self.read_i2c_block_data(0x00, 2)
         # Assemble bytes
         intvalue = value[0] * 256 + value[1]
         return intvalue

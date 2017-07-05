@@ -1,6 +1,6 @@
-from . import sensor
+from . import i2c_device
 
-class MCP9808(sensor.Sensor):
+class MCP9808(i2c_device.I2cDevice):
     '''Library for the Adafruit MCP9808 Temperature sensor'''
     
     _DEFAULT_I2C_ADDRESS    = 0x18
@@ -19,7 +19,7 @@ class MCP9808(sensor.Sensor):
     
     def readC(self):
         # Read temperature value
-        t = self.bus.read_word_data(self.i2cAddress, self._REG_AMBIENT_TEMP)
+        t = self.read_word_data(self._REG_AMBIENT_TEMP)
         # Convert to Big Endian
         t = ((t << 8) & 0xFF00) + (t >> 8)
         

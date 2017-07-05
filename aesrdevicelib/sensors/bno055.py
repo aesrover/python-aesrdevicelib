@@ -2,9 +2,9 @@
 
 import time
 import struct
-from . import sensor
+from . import i2c_device
 
-class BNO055(sensor.Sensor):
+class BNO055(i2c_device.I2cDevice):
     BNO055_ADDRESS_A                 = 0x28
     BNO055_ADDRESS_B                 = 0x29
     BNO055_ID                      = 0xA0
@@ -271,10 +271,10 @@ class BNO055(sensor.Sensor):
         return tuple([i * (1.0 / (1 << 14)) for i in wxyz])
 
     def readBytes(self, register, numBytes=1):
-        return self.bus.read_i2c_block_data(self.i2cAddress, register, numBytes)
+        return self.read_i2c_block_data(register, numBytes)
 
     def writeBytes(self, register, byteVals):
-        return self.bus.write_i2c_block_data(self.i2cAddress, register, byteVals)
+        return self.write_i2c_block_data(register, byteVals)
 
 if __name__ == '__main__':
     bno = BNO055()

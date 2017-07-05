@@ -1,7 +1,7 @@
-from . import sensor
+from . import i2c_device
 import time
 
-class MB7047(sensor.Sensor):
+class MB7047(i2c_device.I2cDevice):
     '''Library for the MaxBotix 12CXL-MaxSonar-WR Sensor'''
     
     _DEFAULT_I2C_ADDRESS = 0x70
@@ -28,14 +28,13 @@ class MB7047(sensor.Sensor):
                                 + str(self._MAX_LOOPS) + "times")
         
         # Signal device to take measurement
-        self.bus.write_byte(self.i2cAddress, self._REG_START_WRITE)
+        self.write_byte(self._REG_START_WRITE)
         
         # Wait 1/10th of a Second to allow device to complete the measurement
         time.sleep(0.1)
         
         # Read measurement data from device
-        data = self.bus.read_i2c_block_data(self.i2cAddress
-                                            , self._REG_START_MEASURE)
+        data = self.read_i2c_block_data(self._REG_START_MEASURE)
         
         # Remove leading bit from first byte, bit shift,
         # and add to calculate distance
