@@ -25,6 +25,8 @@
 import logging
 import time
 
+from . import i2c_device
+
 
 # BME280 default address.
 BME280_I2CADDR = 0x77
@@ -88,10 +90,9 @@ BME280_REGISTER_CONFIG = 0xF5
 BME280_REGISTER_DATA = 0xF7
 
 
-class BME280(object):
+class BME280(i2c_device.I2cDevice):
     def __init__(self, t_mode=BME280_OSAMPLE_1, p_mode=BME280_OSAMPLE_1, h_mode=BME280_OSAMPLE_1,
-                 standby=BME280_STANDBY_250, filter=BME280_FILTER_off, address=BME280_I2CADDR, i2c=None,
-                 **kwargs):
+                 standby=BME280_STANDBY_250, filter=BME280_FILTER_off, i2c_address=BME280_I2CADDR, **kwargs):
         self._logger = logging.getLogger('Adafruit_BMP.BMP085')
         # Check that t_mode is valid.
         if t_mode not in [BME280_OSAMPLE_1, BME280_OSAMPLE_2, BME280_OSAMPLE_4,
@@ -122,60 +123,56 @@ class BME280(object):
             raise ValueError(
                 'Unexpected filter value {0}.'.format(filter))
         self._filter = filter
-        # Create I2C device.
-        if i2c is None:
-            import Adafruit_GPIO.I2C as I2C
-            i2c = I2C
-        # Create device, catch permission errors
+
         try:
-            self._device = i2c.get_i2c_device(address, **kwargs)
+            super().__init__(i2c_address, **kwargs)
         except IOError:
-            print("Unable to communicate with sensor, check permissions.")
+            print("Unable to communicate with sensor, check connection and permissions.")
             exit()
         # Load calibration values.
         self._load_calibration()
-        self._device.write8(BME280_REGISTER_CONTROL, 0x24)  # Sleep mode
+        self.write_byte_data(BME280_REGISTER_CONTROL, 0x24)  # Sleep mode
         time.sleep(0.002)
-        self._device.write8(BME280_REGISTER_CONFIG, ((standby << 5) | (filter << 2)))
+        self.write_byte_data(BME280_REGISTER_CONFIG, ((standby << 5) | (filter << 2)))
         time.sleep(0.002)
-        self._device.write8(BME280_REGISTER_CONTROL_HUM, h_mode)  # Set Humidity Oversample
-        self._device.write8(BME280_REGISTER_CONTROL, ((t_mode << 5) | (p_mode << 2) | 3))  # Set Temp/Pressure Oversample and enter Normal mode
+        self.write_byte_data(BME280_REGISTER_CONTROL_HUM, h_mode)  # Set Humidity Oversample
+        self.write_byte_data(BME280_REGISTER_CONTROL, ((t_mode << 5) | (p_mode << 2) | 3))  # Set Temp/Pressure Oversample and enter Normal mode
         self.t_fine = 0.0
 
     def _load_calibration(self):
 
-        self.dig_T1 = self._device.readU16LE(BME280_REGISTER_DIG_T1)
-        self.dig_T2 = self._device.readS16LE(BME280_REGISTER_DIG_T2)
-        self.dig_T3 = self._device.readS16LE(BME280_REGISTER_DIG_T3)
+        self.dig_T1 = self.read_word_data(BME280_REGISTER_DIG_T1)
+        self.dig_T2 = self.read_word_data(BME280_REGISTER_DIG_T2, signed=True)
+        self.dig_T3 = self.read_word_data(BME280_REGISTER_DIG_T3, signed=True)
 
-        self.dig_P1 = self._device.readU16LE(BME280_REGISTER_DIG_P1)
-        self.dig_P2 = self._device.readS16LE(BME280_REGISTER_DIG_P2)
-        self.dig_P3 = self._device.readS16LE(BME280_REGISTER_DIG_P3)
-        self.dig_P4 = self._device.readS16LE(BME280_REGISTER_DIG_P4)
-        self.dig_P5 = self._device.readS16LE(BME280_REGISTER_DIG_P5)
-        self.dig_P6 = self._device.readS16LE(BME280_REGISTER_DIG_P6)
-        self.dig_P7 = self._device.readS16LE(BME280_REGISTER_DIG_P7)
-        self.dig_P8 = self._device.readS16LE(BME280_REGISTER_DIG_P8)
-        self.dig_P9 = self._device.readS16LE(BME280_REGISTER_DIG_P9)
+        self.dig_P1 = self.read_word_data(BME280_REGISTER_DIG_P1)
+        self.dig_P2 = self.read_word_data(BME280_REGISTER_DIG_P2, signed=True)
+        self.dig_P3 = self.read_word_data(BME280_REGISTER_DIG_P3, signed=True)
+        self.dig_P4 = self.read_word_data(BME280_REGISTER_DIG_P4, signed=True)
+        self.dig_P5 = self.read_word_data(BME280_REGISTER_DIG_P5, signed=True)
+        self.dig_P6 = self.read_word_data(BME280_REGISTER_DIG_P6, signed=True)
+        self.dig_P7 = self.read_word_data(BME280_REGISTER_DIG_P7, signed=True)
+        self.dig_P8 = self.read_word_data(BME280_REGISTER_DIG_P8, signed=True)
+        self.dig_P9 = self.read_word_data(BME280_REGISTER_DIG_P9, signed=True)
 
-        self.dig_H1 = self._device.readU8(BME280_REGISTER_DIG_H1)
-        self.dig_H2 = self._device.readS16LE(BME280_REGISTER_DIG_H2)
-        self.dig_H3 = self._device.readU8(BME280_REGISTER_DIG_H3)
-        self.dig_H6 = self._device.readS8(BME280_REGISTER_DIG_H7)
+        self.dig_H1 = self.read_byte_data(BME280_REGISTER_DIG_H1)
+        self.dig_H2 = self.read_word_data(BME280_REGISTER_DIG_H2, signed=True)
+        self.dig_H3 = self.read_byte_data(BME280_REGISTER_DIG_H3)
+        self.dig_H6 = self.read_byte_data(BME280_REGISTER_DIG_H7, signed=True)
 
-        h4 = self._device.readS8(BME280_REGISTER_DIG_H4)
+        h4 = self.read_byte_data(BME280_REGISTER_DIG_H4, signed=True)
         h4 = (h4 << 4)
-        self.dig_H4 = h4 | (self._device.readU8(BME280_REGISTER_DIG_H5) & 0x0F)
+        self.dig_H4 = h4 | (self.read_byte_data(BME280_REGISTER_DIG_H5) & 0x0F)
 
-        h5 = self._device.readS8(BME280_REGISTER_DIG_H6)
+        h5 = self.read_byte_data(BME280_REGISTER_DIG_H6, signed=True)
         h5 = (h5 << 4)
         self.dig_H5 = h5 | (
-        self._device.readU8(BME280_REGISTER_DIG_H5) >> 4 & 0x0F)
+        self.read_byte_data(BME280_REGISTER_DIG_H5) >> 4 & 0x0F)
 
         '''
-        print '0xE4 = {0:2x}'.format (self._device.readU8 (BME280_REGISTER_DIG_H4))
-        print '0xE5 = {0:2x}'.format (self._device.readU8 (BME280_REGISTER_DIG_H5))
-        print '0xE6 = {0:2x}'.format (self._device.readU8 (BME280_REGISTER_DIG_H6))
+        print '0xE4 = {0:2x}'.format (self.read_byte_data (BME280_REGISTER_DIG_H4))
+        print '0xE5 = {0:2x}'.format (self.read_byte_data (BME280_REGISTER_DIG_H5))
+        print '0xE6 = {0:2x}'.format (self.read_byte_data (BME280_REGISTER_DIG_H6))
 
         print 'dig_H1 = {0:d}'.format (self.dig_H1)
         print 'dig_H2 = {0:d}'.format (self.dig_H2)
@@ -189,9 +186,9 @@ class BME280(object):
         """Waits for reading to become available on device."""
         """Does a single burst read of all data values from device."""
         """Returns the raw (uncompensated) temperature from the sensor."""
-        while (self._device.readU8(BME280_REGISTER_STATUS) & 0x08):    # Wait for conversion to complete (TODO : add timeout)
+        while (self.read_byte_data(BME280_REGISTER_STATUS) & 0x08):    # Wait for conversion to complete (TODO : add timeout)
             time.sleep(0.002)
-        self.BME280Data = self._device.readList(BME280_REGISTER_DATA, 8)
+        self.BME280Data = self.read_i2c_block_data(BME280_REGISTER_DATA, 8)
         raw = ((self.BME280Data[3] << 16) | (self.BME280Data[4] << 8) | self.BME280Data[5]) >> 4
         return raw
 
