@@ -182,34 +182,37 @@ class BME280(i2c_device.I2cDevice):
         print 'dig_H6 = {0:d}'.format (self.dig_H6)
         '''
 
-    def read_raw_temp(self):
-        """Waits for reading to become available on device."""
+    def read_data(self):
         """Does a single burst read of all data values from device."""
-        """Returns the raw (uncompensated) temperature from the sensor."""
         while (self.read_byte_data(BME280_REGISTER_STATUS) & 0x08):    # Wait for conversion to complete (TODO : add timeout)
             time.sleep(0.002)
         self.BME280Data = self.read_i2c_block_data(BME280_REGISTER_DATA, 8)
+
+    def get_raw_temp(self):
+        """Returns the raw (uncompensated) temperature from the sensor."""
+        """Assumes that the 'read_data' method has already been run """
+        """i.e. that BME280Data[] has been populated."""
         raw = ((self.BME280Data[3] << 16) | (self.BME280Data[4] << 8) | self.BME280Data[5]) >> 4
         return raw
 
-    def read_raw_pressure(self):
+    def get_raw_pressure(self):
         """Returns the raw (uncompensated) pressure level from the sensor."""
-        """Assumes that the temperature has already been read """
+        """Assumes that the 'read_data' method has already been run """
         """i.e. that BME280Data[] has been populated."""
         raw = ((self.BME280Data[0] << 16) | (self.BME280Data[1] << 8) | self.BME280Data[2]) >> 4
         return raw
 
-    def read_raw_humidity(self):
+    def get_raw_humidity(self):
         """Returns the raw (uncompensated) humidity value from the sensor."""
-        """Assumes that the temperature has already been read """
+        """Assumes that the 'read_data' method has already been run """
         """i.e. that BME280Data[] has been populated."""
         raw = (self.BME280Data[6] << 8) | self.BME280Data[7]
         return raw
 
-    def read_temperature(self):
+    def get_temperature(self):
         """Gets the compensated temperature in degrees celsius."""
         # float in Python is double precision
-        UT = float(self.read_raw_temp())
+        UT = float(self.get_raw_temp())
         var1 = (UT / 16384.0 - float(self.dig_T1) / 1024.0) * float(self.dig_T2)
         var2 = ((UT / 131072.0 - float(self.dig_T1) / 8192.0) * (
         UT / 131072.0 - float(self.dig_T1) / 8192.0)) * float(self.dig_T3)
@@ -217,9 +220,9 @@ class BME280(i2c_device.I2cDevice):
         temp = (var1 + var2) / 5120.0
         return temp
 
-    def read_pressure(self):
+    def get_pressure(self):
         """Gets the compensated pressure in Pascals."""
-        adc = float(self.read_raw_pressure())
+        adc = float(self.get_raw_pressure())
         var1 = float(self.t_fine) / 2.0 - 64000.0
         var2 = var1 * var1 * float(self.dig_P6) / 32768.0
         var2 = var2 + var1 * float(self.dig_P5) * 2.0
@@ -236,8 +239,8 @@ class BME280(i2c_device.I2cDevice):
         p = p + (var1 + var2 + float(self.dig_P7)) / 16.0
         return p
 
-    def read_humidity(self):
-        adc = float(self.read_raw_humidity())
+    def get_humidity(self):
+        adc = float(self.get_raw_humidity())
         # print 'Raw humidity = {0:d}'.format (adc)
         h = float(self.t_fine) - 76800.0
         h = (adc - (float(self.dig_H4) * 64.0 + float(self.dig_H5) / 16384.0 * h)) * (
@@ -250,27 +253,27 @@ class BME280(i2c_device.I2cDevice):
             h = 0
         return h
 
-    def read_temperature_f(self):
+    def get_temperature_f(self):
         # Wrapper to get temp in F
-        celsius = self.read_temperature()
+        celsius = self.get_temperature()
         temp = celsius * 1.8 + 32
         return temp
 
-    def read_pressure_inches(self):
+    def get_pressure_inches(self):
         # Wrapper to get pressure in inches of Hg
-        pascals = self.read_pressure()
+        pascals = self.get_pressure()
         inches = pascals * 0.0002953
         return inches
 
-    def read_dewpoint(self):
+    def get_dewpoint(self):
         # Return calculated dewpoint in C, only accurate at > 50% RH
-        celsius = self.read_temperature()
-        humidity = self.read_humidity()
+        celsius = self.get_temperature()
+        humidity = self.get_humidity()
         dewpoint = celsius - ((100 - humidity) / 5)
         return dewpoint
 
-    def read_dewpoint_f(self):
+    def get_dewpoint_f(self):
         # Return calculated dewpoint in F, only accurate at > 50% RH
-        dewpoint_c = self.read_dewpoint()
+        dewpoint_c = self.get_dewpoint()
         dewpoint_f = dewpoint_c * 1.8 + 32
         return dewpoint_f
