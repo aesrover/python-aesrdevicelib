@@ -28,6 +28,9 @@ import smbus
 from time import sleep
 from . import i2c_device
 
+# Default I2C address:
+DEFAULT_ADDRESS = 0x76
+
 # Models
 MODEL_02BA = 0
 MODEL_30BA = 1
@@ -70,8 +73,8 @@ class MS5837(i2c_device.I2cDevice):
     _MS5837_CONVERT_D1_256   = 0x40
     _MS5837_CONVERT_D2_256   = 0x50
     
-    def __init__(self, model=MODEL_30BA, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, model=MODEL_30BA, i2c_address=DEFAULT_ADDRESS, *args, **kwargs):
+        super().__init__(i2c_address, *args, **kwargs)
 
         self._model = model
 
