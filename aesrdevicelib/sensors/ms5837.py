@@ -24,11 +24,7 @@ SOFTWARE.
 
 # From: https://github.com/bluerobotics/ms5837-python with updates for python3
 
-try:
-    import smbus
-except:
-    print('Try sudo apt-get install python-smbus')
-
+import smbus
 from time import sleep
 
 # Models
@@ -89,11 +85,6 @@ class MS5837(object):
         self._D1 = 0
         self._D2 = 0
         
-    def init(self):
-        if self._bus is None:
-            "No bus!"
-            return False
-        
         self._bus.write_byte(self._MS5837_ADDR, self._MS5837_RESET)
         
         # Wait for reset to complete
@@ -109,16 +100,9 @@ class MS5837(object):
                         
         crc = (self._C[0] & 0xF000) >> 12
         if crc != self._crc4(self._C):
-            print("PROM read error, CRC failed!")
-            return False
-        
-        return True
-        
+            raise ValueError("MS537 PROM read error, CRC failed!")
+
     def read(self, oversampling=OSR_8192):
-        if self._bus is None:
-            print("No bus!")
-            return False
-        
         if oversampling < OSR_256 or oversampling > OSR_8192:
             print("Invalid oversampling option!")
             return False
