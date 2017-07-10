@@ -26,6 +26,7 @@ SOFTWARE.
 
 import smbus
 from time import sleep
+from . import i2c_device
 
 # Models
 MODEL_02BA = 0
@@ -59,7 +60,7 @@ UNITS_Farenheit  = 2
 UNITS_Kelvin     = 3
 
     
-class MS5837(object):
+class MS5837(i2c_device.I2cDevice):
     
     # Registers
     _MS5837_ADDR             = 0x76  
@@ -69,23 +70,18 @@ class MS5837(object):
     _MS5837_CONVERT_D1_256   = 0x40
     _MS5837_CONVERT_D2_256   = 0x50
     
-    def __init__(self, model=MODEL_30BA, bus=1):
+    def __init__(self, model=MODEL_30BA, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
         self._model = model
-        
-        try:
-            self._bus = smbus.SMBus(bus)
-        except:
-            print("Bus %d is not available." % bus)
-            print("Available busses are listed as /dev/i2c*")
-            self._bus = None
-        
+
         self._fluidDensity = DENSITY_FRESHWATER
         self._pressure = 0
         self._temperature = 0
         self._D1 = 0
         self._D2 = 0
-        
-        self._bus.write_byte(self._MS5837_ADDR, self._MS5837_RESET)
+
+        self.write_byte(self._MS5837_RESET)
         
         # Wait for reset to complete
         sleep(0.01)
@@ -94,7 +90,7 @@ class MS5837(object):
         
         # Read calibration values and CRC
         for i in range(7):
-            c = self._bus.read_word_data(self._MS5837_ADDR, self._MS5837_PROM_READ + 2*i)
+            c = self.read_word_data(self._MS5837_PROM_READ + 2*i)
             c =  ((c & 0xFF) << 8) | (c >> 8) # SMBus is little-endian for word transfers, we need to swap MSB and LSB
             self._C.append(c)
                         
@@ -108,23 +104,23 @@ class MS5837(object):
             return False
         
         # Request D1 conversion (temperature)
-        self._bus.write_byte(self._MS5837_ADDR, self._MS5837_CONVERT_D1_256 + 2*oversampling)
+        self.write_byte(self._MS5837_CONVERT_D1_256 + 2*oversampling)
     
         # Maximum conversion time increases linearly with oversampling
         # max time (seconds) ~= 2.2e-6(x) where x = OSR = (2^8, 2^9, ..., 2^13)
         # We use 2.5e-6 for some overhead
         sleep(2.5e-6 * 2**(8+oversampling))
         
-        d = self._bus.read_i2c_block_data(self._MS5837_ADDR, self._MS5837_ADC_READ, 3)
+        d = self.read_i2c_block_data(self._MS5837_ADC_READ, 3)
         self._D1 = d[0] << 16 | d[1] << 8 | d[2]
         
         # Request D2 conversion (pressure)
-        self._bus.write_byte(self._MS5837_ADDR, self._MS5837_CONVERT_D2_256 + 2*oversampling)
+        self.write_byte(self._MS5837_CONVERT_D2_256 + 2*oversampling)
     
         # As above
         sleep(2.5e-6 * 2**(8+oversampling))
  
-        d = self._bus.read_i2c_block_data(self._MS5837_ADDR, self._MS5837_ADC_READ, 3)
+        d = self.read_i2c_block_data(self._MS5837_ADC_READ, 3)
         self._D2 = d[0] << 16 | d[1] << 8 | d[2]
 
         # Calculate compensated pressure and temperature
@@ -235,10 +231,10 @@ class MS5837(object):
 
 
 class MS5837_30BA(MS5837):
-    def __init__(self, bus=1):
-        MS5837.__init__(self, MODEL_30BA, bus)
+    def __init__(self, *args, **kwargs):
+        MS5837.__init__(self, MODEL_30BA, *args, **kwargs)
 
 
 class MS5837_02BA(MS5837):
-    def __init__(self, bus=1):
-        MS5837.__init__(self, MODEL_02BA, bus)
+    def __init__(self, *args, **kwargs):
+        MS5837.__init__(self, MODEL_02BA, *args, **kwargs)
