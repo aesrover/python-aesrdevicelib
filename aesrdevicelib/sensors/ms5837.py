@@ -1,133 +1,243 @@
-from . import i2c_device
-import time
+"""
+The MIT License (MIT)
 
+Copyright (c) 2017 Blue Robotics
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+"""
+
+# From: https://github.com/bluerobotics/ms5837-python with updates for python3
+
+import smbus
+from time import sleep
+from . import i2c_device
+
+# Default I2C address:
+DEFAULT_ADDRESS = 0x76
+
+# Models
+MODEL_02BA = 0
+MODEL_30BA = 1
+
+# Oversampling options
+OSR_256  = 0
+OSR_512  = 1
+OSR_1024 = 2
+OSR_2048 = 3
+OSR_4096 = 4
+OSR_8192 = 5
+
+# kg/m^3 convenience
+DENSITY_FRESHWATER = 997
+DENSITY_SALTWATER = 1029
+
+# Conversion factors (from native unit, mbar)
+UNITS_Pa     = 100.0
+UNITS_hPa    = 1.0
+UNITS_kPa    = 0.1
+UNITS_mbar   = 1.0
+UNITS_bar    = 0.001
+UNITS_atm    = 0.000986923
+UNITS_Torr   = 0.750062
+UNITS_psi    = 0.014503773773022
+
+# Valid units
+UNITS_Centigrade = 1
+UNITS_Farenheit  = 2
+UNITS_Kelvin     = 3
+
+    
 class MS5837(i2c_device.I2cDevice):
-    '''Library for the Blue Robotics MS5837-30BA Pressure Sensor'''
     
-    PROM_READ = 0xA2
-    _DEFAULT_I2C_ADDRESS = 0x76
+    # Registers
+    _MS5837_ADDR             = 0x76  
+    _MS5837_RESET            = 0x1E
+    _MS5837_ADC_READ         = 0x00
+    _MS5837_PROM_READ        = 0xA0
+    _MS5837_CONVERT_D1_256   = 0x40
+    _MS5837_CONVERT_D2_256   = 0x50
     
-    # PROM Calibration values stored in the C array
-    # C[0]       always equals 0 - not used
-    # C[1]       Pressure sensitivy
-    # C[2]       Pressure offset
-    # C[3]       Temperature coefficient of pressure sensitivity
-    # C[4]       Temperature coefficient of pressure offset
-    # C[5]       Reference temperature
-    # C[6]       Temperature coefficient of the temperature
+    def __init__(self, model=MODEL_30BA, i2c_address=DEFAULT_ADDRESS, *args, **kwargs):
+        super().__init__(i2c_address, *args, **kwargs)
+
+        self._model = model
+
+        self._fluidDensity = DENSITY_FRESHWATER
+        self._pressure = 0
+        self._temperature = 0
+        self._D1 = 0
+        self._D2 = 0
+
+        self.write_byte(self._MS5837_RESET)
+        
+        # Wait for reset to complete
+        sleep(0.01)
+        
+        self._C = []
+        
+        # Read calibration values and CRC
+        for i in range(7):
+            c = self.read_word_data(self._MS5837_PROM_READ + 2*i)
+            c =  ((c & 0xFF) << 8) | (c >> 8) # SMBus is little-endian for word transfers, we need to swap MSB and LSB
+            self._C.append(c)
+                        
+        crc = (self._C[0] & 0xF000) >> 12
+        if crc != self._crc4(self._C):
+            raise ValueError("MS537 PROM read error, CRC failed!")
+
+    def read(self, oversampling=OSR_8192):
+        if oversampling < OSR_256 or oversampling > OSR_8192:
+            print("Invalid oversampling option!")
+            return False
+        
+        # Request D1 conversion (temperature)
+        self.write_byte(self._MS5837_CONVERT_D1_256 + 2*oversampling)
     
-    C = []
+        # Maximum conversion time increases linearly with oversampling
+        # max time (seconds) ~= 2.2e-6(x) where x = OSR = (2^8, 2^9, ..., 2^13)
+        # We use 2.5e-6 for some overhead
+        sleep(2.5e-6 * 2**(8+oversampling))
+        
+        d = self.read_i2c_block_data(self._MS5837_ADC_READ, 3)
+        self._D1 = d[0] << 16 | d[1] << 8 | d[2]
+        
+        # Request D2 conversion (pressure)
+        self.write_byte(self._MS5837_CONVERT_D2_256 + 2*oversampling)
     
-    def __init__(self, i2cAddress= _DEFAULT_I2C_ADDRESS, *args, **kwargs):
-        super(MS5837, self).__init__(i2cAddress, *args, **kwargs)
+        # As above
+        sleep(2.5e-6 * 2**(8+oversampling))
+ 
+        d = self.read_i2c_block_data(self._MS5837_ADC_READ, 3)
+        self._D2 = d[0] << 16 | d[1] << 8 | d[2]
+
+        # Calculate compensated pressure and temperature
+        # using raw ADC values and internal calibration
+        self._calculate()
         
-        # MS5837-30BA address, 0x76(118)
-        # 0x1E(30)	Reset command
-        self.write_byte(0x1E)
-        
-        # ---- Read 12 bytes of calibration data ----
-        self.C.append(0)
-        for i in range(6):
-            data = self.read_i2c_block_data(self.PROM_READ+(i*2), 2)
-            self.C.append((data[0] << 8) + data[1])
-            
-        '''
-        OLD VERSION
-        
-        # ---- Read 12 bytes of calibration data ----
-        # Read pressure sensitivity
-        data = self.read_i2c_block_data(0xA2, 2)
-        self.C1 = (data[0] << 8) + data[1]
-        
-        # Read pressure offset
-        data = self.read_i2c_block_data(0xA4, 2)
-        self.C2 = (data[0] << 8) + data[1]
-        
-        # Read temperature coefficient of pressure sensitivity
-        data = self.read_i2c_block_data(0xA6, 2)
-        self.C3 = (data[0] << 8) + data[1]
-        
-        # Read temperature coefficient of pressure offset
-        data = self.read_i2c_block_data(0xA8, 2)
-        self.C4 = (data[0] << 8) + data[1]
-        
-        # Read reference temperature
-        data = self.read_i2c_block_data(0xAA, 2)
-        self.C5 = (data[0] << 8) + data[1]
-        
-        # Read temperature coefficient of the temperature
-        data = self.read_i2c_block_data(0xAC, 2)
-        self.C6 = (data[0] << 8) + data[1]
-        
-        '''
+        return True
     
-            
-    # Read function, returns a dictionary of the pressure and temperature values      
-    def read(self):
+    def setFluidDensity(self, denisty):
+        self._fluidDensity = denisty
         
-        #---- Read digital pressure and temperature data ----
-        # MS5837-30BA address, 0x76(118)
-        # 0x48(72)	Pressure conversion(OSR = 4096) command
-        self.write_byte(0x48)
+    # Pressure in requested units
+    # mbar * conversion
+    def pressure(self, conversion=UNITS_mbar):
+        return self._pressure * conversion
         
-        time.sleep(0.5)
+    # Temperature in requested units
+    # default degrees C
+    def temperature(self, conversion=UNITS_Centigrade):
+        degC = self._temperature / 100.0
+        if conversion == UNITS_Farenheit:
+            return (9/5) * degC + 32
+        elif conversion == UNITS_Kelvin:
+            return degC - 273
+        return degC
         
-        # Read digital pressure value
-        # Read data back from 0x00(0), 3 bytes
-        # D1 MSB2, D1 MSB1, D1 LSB
-        value = self.read_i2c_block_data(0x00, 3)
-        D1 = (value[0] << 16)  + (value[1] << 8) + value[2]
-        
-        # MS5837-30BA address, i2cAddress(118)
-        # 0x58(88)	Temperature conversion(OSR = 4096) command
-        self.write_byte(0x58)
-        
-        time.sleep(0.5)
-        
-        # Read digital temperature value
-        # Read data back from 0x00(0), 3 bytes
-        # D2 MSB2, D2 MSB1, D2 LSB
-        value = self.read_i2c_block_data(0x00, 3)
-        D2 = (value[0] << 16)  + (value[1] << 8) + value[2]
-        
-        # ---- Calculate temperature ----
-        dT = D2 - self.C[5] * (2**8)
-        TEMP = 2000 + dT * self.C[6] / (2**23)
-        
-        # ---- Calculated temperature compensated pressure ----
-        OFF = self.C[2] * (2**16) + (self.C[4] * dT) / (2**7)
-        SENS = self.C[1] * (2**15) + (self.C[3] * dT ) / (2**8)
-        
-        # Temperature compensated pressure (not the most accurate)
-        # Use the flowchart for optimum accuracy
-        # Pressure: P = (D1 * SENS / ((2**21) - OFF)) / (2**13)
-        
-        
-        # ---- Second order temperature compensation (flowchart)
-        Ti = 0
+    # Depth relative to MSL pressure in given fluid density
+    def depth(self):
+        return (self.pressure(UNITS_Pa)-101300)/(self._fluidDensity*9.80665)
+    
+    # Altitude relative to MSL pressure
+    def altitude(self):
+        return (1-pow((self.pressure()/1013.25),.190284))*145366.45*.3048        
+    
+    # Cribbed from datasheet
+    def _calculate(self):
         OFFi = 0
         SENSi = 0
+        Ti = 0
+
+        dT = self._D2-self._C[5]*256
+        if self._model == MODEL_02BA:
+            SENS = self._C[1]*65536+(self._C[3]*dT)/128
+            OFF = self._C[2]*131072+(self._C[4]*dT)/64
+            self._pressure = (self._D1*SENS/(2097152)-OFF)/(32768)
+        else:
+            SENS = self._C[1]*32768+(self._C[3]*dT)/256
+            OFF = self._C[2]*65536+(self._C[4]*dT)/128
+            self._pressure = (self._D1*SENS/(2097152)-OFF)/(8192)
         
-        if ((TEMP/100) < 20):        # Low temperature
-            Ti = 3 * (dT**2) / (2**33)
-            OFFi = 3 * ((TEMP - 2000) ** 2) / 2
-            SENSi = 5 * ((TEMP - 2000) ** 2) / (2**3)
-            
-            if (TEMP/100) < -15:    # Very Low Temperature
-                OFFi = OFFi + 7 * ((TEMP + 1500)**2)
-                SENSi = SENSi + 4 * ((TEMP + 1500)**2)
+        self._temperature = 2000+dT*self._C[6]/8388608
+
+        # Second order compensation
+        if self._model == MODEL_02BA:
+            if (self._temperature/100) < 20: # Low temp
+                Ti = (11*dT*dT)/(34359738368)
+                OFFi = (31*(self._temperature-2000)*(self._temperature-2000))/8
+                SENSi = (63*(self._temperature-2000)*(self._temperature-2000))/32
                 
-        else:                      # High Temperature
-            Ti = 2 * (dT ** 2) / (2 ** 37)
-            OFFi = ((TEMP - 2000)**2) / (2**4)
-            
-        # Calculated pressure and temperature 2nd Order    
-        OFF2 = OFF - OFFi
-        SENS2 = SENS - SENSi
+        else:
+            if (self._temperature/100) < 20: # Low temp
+                Ti = (3*dT*dT)/(8589934592)
+                OFFi = (3*(self._temperature-2000)*(self._temperature-2000))/2
+                SENSi = (5*(self._temperature-2000)*(self._temperature-2000))/8
+                if (self._temperature/100) < -15: # Very low temp
+                    OFFi = OFFi+7*(self._temperature+1500)*(self._temperature+1500)
+                    SENSi = SENSi+4*(self._temperature+1500)*(self._temperature+1500)
+            elif (self._temperature/100) >= 20: # High temp
+                Ti = 2*(dT*dT)/(137438953472)
+                OFFi = (1*(self._temperature-2000)*(self._temperature-2000))/16
+                SENSi = 0
         
-        TEMP2 = (TEMP - Ti) / 100
-        P2 = (((D1 * SENS2) / (2**21) - OFF2) / (2**31)) / 10
-          
+        OFF2 = OFF-OFFi
+        SENS2 = SENS-SENSi
+        
+        if self._model == MODEL_02BA:
+            self._temperature = (self._temperature-Ti)
+            self._pressure = (((self._D1*SENS2)/2097152-OFF2)/32768)/100.0
+        else:
+            self._temperature = (self._temperature-Ti)
+            self._pressure = (((self._D1*SENS2)/2097152-OFF2)/8192)/10.0   
+        
+    # Cribbed from datasheet
+    def _crc4(self, n_prom):
+        n_rem = 0
+        
+        n_prom[0] = ((n_prom[0]) & 0x0FFF)
+        n_prom.append(0)
+    
+        for i in range(16):
+            if i%2 == 1:
+                n_rem ^= ((n_prom[i>>1]) & 0x00FF)
+            else:
+                n_rem ^= (n_prom[i>>1] >> 8)
                 
-        # return values in a dictionary
-        return {"mbar" : P2, "temp": TEMP2, "tempunit" : "degC"}
+            for n_bit in range(8,0,-1):
+                if n_rem & 0x8000:
+                    n_rem = (n_rem << 1) ^ 0x3000
+                else:
+                    n_rem = (n_rem << 1)
+
+        n_rem = ((n_rem >> 12) & 0x000F)
+        
+        self.n_prom = n_prom
+        self.n_rem = n_rem
+    
+        return n_rem ^ 0x00
+
+
+class MS5837_30BA(MS5837):
+    def __init__(self, *args, **kwargs):
+        MS5837.__init__(self, MODEL_30BA, *args, **kwargs)
+
+
+class MS5837_02BA(MS5837):
+    def __init__(self, *args, **kwargs):
+        MS5837.__init__(self, MODEL_02BA, *args, **kwargs)
