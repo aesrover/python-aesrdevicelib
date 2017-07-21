@@ -208,18 +208,9 @@ logger = logging.getLogger(__name__)
 
 
 class BNO055(I2cDevice):
-    def __init__(self, i2c_address=BNO055_ADDRESS_A, *args, **kwargs):
+    def __init__(self, i2c_address=BNO055_ADDRESS_A, *args, mode=OPERATION_MODE_NDOF, **kwargs):
         super().__init__(i2c_address, *args, **kwargs)
 
-    def _config_mode(self):
-        # Enter configuration mode.
-        self.set_mode(OPERATION_MODE_CONFIG)
-
-    def _operation_mode(self):
-        # Enter operation mode to read sensor data.
-        self.set_mode(self._mode)
-
-    def begin(self, mode=OPERATION_MODE_NDOF):
         """Initialize the BNO055 sensor.  Must be called once before any other
         BNO055 library functions.  Will return True if the BNO055 was
         successfully initialized, and False otherwise.
@@ -243,7 +234,7 @@ class BNO055(I2cDevice):
         bno_id = self.read_byte_data(BNO055_CHIP_ID_ADDR)
         logger.debug('Read chip ID: 0x{0:02X}'.format(bno_id))
         if bno_id != BNO055_ID:
-            return False
+            raise ValueError("BNO055 Chip ID incorrect")
         # Reset the device.
         # Use the reset command.
         self.write_byte_data(BNO055_SYS_TRIGGER_ADDR, 0x20)
@@ -256,7 +247,14 @@ class BNO055(I2cDevice):
         self.write_byte_data(BNO055_SYS_TRIGGER_ADDR, 0x0)
         # Enter normal operation mode.
         self._operation_mode()
-        return True
+
+    def _config_mode(self):
+        # Enter configuration mode.
+        self.set_mode(OPERATION_MODE_CONFIG)
+
+    def _operation_mode(self):
+        # Enter operation mode to read sensor data.
+        self.set_mode(self._mode)
 
     def set_mode(self, mode):
         """Set operation mode for BNO055 sensor.  Mode should be a value from
