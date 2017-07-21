@@ -3,23 +3,20 @@ import smbus
 
 class I2cDevice(object):
     # Add i2cAddress to parent class calls
-    def __getattribute__(self, name):
+    def __getattr__(self, name):
         # Get attribute (first from the base class, then the current class if
         #   it fails)
         from_bus = False
         try:
-            attr = object.__getattribute__(self, name)
+            attr = getattr(self.bus, name)
+            if name.startswith('__'):
+                raise AttributeError
+            from_bus = True
         except AttributeError:
-            try:
-                attr = getattr(self.bus, name)
-                if name.startswith('__'):
-                    raise AttributeError
-                from_bus = True
-            except AttributeError:
-                text_class = self.__class__
-                raise AttributeError("{}.{} object has no attribute '{}'"
-                                     .format(text_class.__module__,
-                                             text_class.__name__, name))
+            text_class = self.__class__
+            raise AttributeError("{}.{} object has no attribute '{}'"
+                                 .format(text_class.__module__,
+                                         text_class.__name__, name))
 
         # Return a modified function if the attribute is a function:
         if hasattr(attr, '__call__'):
