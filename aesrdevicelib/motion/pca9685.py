@@ -56,30 +56,24 @@ logger = logging.getLogger(__name__)
 def software_reset(i2c=None, **kwargs):
     """Sends a software reset (SWRST) command to all servo drivers on the bus."""
     # Setup I2C interface for device 0x00 to talk to all of them.
-    if i2c is None:
-        import Adafruit_GPIO.I2C as I2C
-        i2c = I2C
-    self._device = i2c.get_i2c_device(0x00, **kwargs)
-    self._device.writeRaw8(0x06)  # SWRST
+    d = i2c_device.I2cDevice(0x70, **kwargs)
+    d.write_byte_data(0x06)  # SWRST
 
 
 class PCA9685(object):
     """PCA9685 PWM LED/servo controller."""
 
-    def __init__(self, address=PCA9685_ADDRESS, i2c=None, **kwargs):
+    def __init__(self, address=PCA9685_ADDRESS, **kwargs):
         """Initialize the PCA9685."""
         # Setup I2C interface for the device.
-        if i2c is None:
-            import Adafruit_GPIO.I2C as I2C
-            i2c = I2C
-        self._device = i2c.get_i2c_device(address, **kwargs)
+        self._device = i2c_device.I2cDevice(address, **kwargs)
         self.set_all_pwm(0, 0)
-        self._device.write8(MODE2, OUTDRV)
-        self._device.write8(MODE1, ALLCALL)
+        self._device.write_byte_data(MODE2, OUTDRV)
+        self._device.write_byte_data(MODE1, ALLCALL)
         time.sleep(0.005)  # wait for oscillator
-        mode1 = self._device.readU8(MODE1)
+        mode1 = self._device.read_byte_data(MODE1, False)
         mode1 = mode1 & ~SLEEP  # wake up (reset sleep)
-        self._device.write8(MODE1, mode1)
+        self._device.write_byte_data(MODE1, mode1)
         time.sleep(0.005)  # wait for oscillator
 
     def set_pwm_freq(self, freq_hz):
@@ -92,24 +86,24 @@ class PCA9685(object):
         logger.debug('Estimated pre-scale: {0}'.format(prescaleval))
         prescale = int(math.floor(prescaleval + 0.5))
         logger.debug('Final pre-scale: {0}'.format(prescale))
-        oldmode = self._device.readU8(MODE1);
+        oldmode = self._device.read_byte_data(MODE1, False)
         newmode = (oldmode & 0x7F) | 0x10    # sleep
-        self._device.write8(MODE1, newmode)  # go to sleep
-        self._device.write8(PRESCALE, prescale)
-        self._device.write8(MODE1, oldmode)
+        self._device.write_byte_data(MODE1, newmode)  # go to sleep
+        self._device.write_byte_data(PRESCALE, prescale)
+        self._device.write_byte_data(MODE1, oldmode)
         time.sleep(0.005)
-        self._device.write8(MODE1, oldmode | 0x80)
+        self._device.write_byte_data(MODE1, oldmode | 0x80)
 
     def set_pwm(self, channel, on, off):
         """Sets a single PWM channel."""
-        self._device.write8(LED0_ON_L+4*channel, on & 0xFF)
-        self._device.write8(LED0_ON_H+4*channel, on >> 8)
-        self._device.write8(LED0_OFF_L+4*channel, off & 0xFF)
-        self._device.write8(LED0_OFF_H+4*channel, off >> 8)
+        self._device.write_byte_data(LED0_ON_L+4*channel, on & 0xFF)
+        self._device.write_byte_data(LED0_ON_H+4*channel, on >> 8)
+        self._device.write_byte_data(LED0_OFF_L+4*channel, off & 0xFF)
+        self._device.write_byte_data(LED0_OFF_H+4*channel, off >> 8)
 
     def set_all_pwm(self, on, off):
         """Sets all PWM channels."""
-        self._device.write8(ALL_LED_ON_L, on & 0xFF)
-        self._device.write8(ALL_LED_ON_H, on >> 8)
-        self._device.write8(ALL_LED_OFF_L, off & 0xFF)
-        self._device.write8(ALL_LED_OFF_H, off >> 8)
+        self._device.write_byte_data(ALL_LED_ON_L, on & 0xFF)
+        self._device.write_byte_data(ALL_LED_ON_H, on >> 8)
+        self._device.write_byte_data(ALL_LED_OFF_L, off & 0xFF)
+        self._device.write_byte_data(ALL_LED_OFF_H, off >> 8)
