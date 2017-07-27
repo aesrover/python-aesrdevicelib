@@ -1,4 +1,4 @@
-from . import i2c_device
+from ..sensors import i2c_device
 
 
 class BlueESC(i2c_device.I2cDevice):
