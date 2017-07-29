@@ -33,13 +33,13 @@ class BlueESC_PCA9685():
                  **kwargs: "PCA9685 kwargs (if not supplied)"):
         self.channel = channel
 
-        if pca9685 is None:
-            pca9685 = PCA9685(**kwargs)
-        self.pca = pca9685
-
         if pwm_freq not in self.BLUEESC_PWM_FREQS:
             raise ValueError("PWM Frequency must be one of {}.".format(list(self.BLUEESC_PWM_FREQS.keys())))
-        self.pca.set_pwm_freq(pwm_freq)
+
+        if pca9685 is None:
+            pca9685 = PCA9685(**kwargs)
+            pca9685.set_pwm_freq(pwm_freq)
+        self.pca = pca9685
 
         freqs = self.BLUEESC_PWM_FREQS[pwm_freq]
         self.min = freqs[0]
