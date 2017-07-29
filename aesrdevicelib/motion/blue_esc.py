@@ -27,7 +27,7 @@ class BlueESC_I2C(i2c_device.I2cDevice):
 
 class BlueESC_PCA9685():
     # PCA9685 PWM values for BlueESC (full rev, init, full fwd)
-    BLUEESC_PWM_FREQS = {400: (2005, 2735, 3450), 350: (1760, 2400, 3050), 300: (1505, 2050, 2595)}
+    BLUEESC_PWM_FREQS = {400: (2005, 2685, 2735, 2785, 3450), 350: (1760, 2370, 2400, 2455, 3050), 300: (1505, 2015, 2050, 2086, 2595)}
 
     def __init__(self, channel: int, pca9685: PCA9685=None, pwm_freq: int=300,
                  **kwargs: "PCA9685 kwargs (if not supplied)"):
@@ -42,9 +42,11 @@ class BlueESC_PCA9685():
         self.pca = pca9685
 
         freqs = self.BLUEESC_PWM_FREQS[pwm_freq]
-        self.min = freqs[0]
-        self.mid = freqs[1]
-        self.max = freqs[2]
+        self.full_bck = freqs[0]
+        self.min_bck = freqs[1]
+        self.mid = freqs[2]
+        self.min_fwd = freqs[3]
+        self.full_fwd = freqs[4]
 
     def set_pwm(self, on, off):
         """ Wrapper function of `pca.set_pwm`. Fills in channel number. """
@@ -61,9 +63,9 @@ class BlueESC_PCA9685():
 
         pwr_val = self.mid
         if pwr < 0:
-            pwr_val = float(pwr) * (self.mid - self.min) + self.mid
+            pwr_val = float(pwr) * (self.min_bck - self.full_bck) + self.min_bck
         elif pwr > 0:
-            pwr_val = float(pwr) * (self.max - self.mid) + self.mid
+            pwr_val = float(pwr) * (self.full_fwd - self.min_fwd) + self.min_fwd
         pwr_val = round(pwr_val)
 
         self.set_pwm(0, pwr_val)
