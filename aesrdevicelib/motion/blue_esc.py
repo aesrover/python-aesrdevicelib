@@ -13,12 +13,16 @@ class BlueESC_I2C(i2c_device.I2cDevice):
     def start(self):
         self.write_word_data(self._THROTTLE_REGISTER, 0)
 
-    def set_power(self, power):
+    def set_power(self, power: float):
+        if power < -1 or power > 1:
+            raise ValueError("Power must be within [-1,1].")
+        power *= 32767
+        power = round(power)
         self.write_word_data(self._THROTTLE_REGISTER, power)
 
-    def start_power(self, speed):
+    def start_power(self, power: float):
         self.start()
-        self.set_power(speed)
+        self.set_power(power)
 
 
 class BlueESC_PCA9685():
