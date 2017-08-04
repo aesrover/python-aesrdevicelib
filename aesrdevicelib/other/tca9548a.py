@@ -1,4 +1,4 @@
-from ..sensors import i2c_device
+from .. import i2c_device
 
 
 class TCA9548A(i2c_device.I2cDevice):

@@ -26,7 +26,7 @@ SOFTWARE.
 
 import smbus
 from time import sleep
-from . import i2c_device
+from .. import i2c_device
 
 # Default I2C address:
 DEFAULT_ADDRESS = 0x76

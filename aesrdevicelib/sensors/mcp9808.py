@@ -1,4 +1,5 @@
-from . import i2c_device
+from .. import i2c_device
+
 
 class MCP9808(i2c_device.I2cDevice):
     '''Library for the Adafruit MCP9808 Temperature sensor'''
