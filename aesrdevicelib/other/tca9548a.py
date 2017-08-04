@@ -9,9 +9,10 @@ class TCA9548A(i2c_device.I2cDevice):
     def __init__(self, i2c_address=_DEFAULT_I2C_ADDRESS, *args, **kwargs):
         super(TCA9548A, self).__init__(i2c_address, *args, **kwargs)
 
-    def tcaselect(self, i):
-        if i > 7:
-            return
+    def select_channel(self, c: int):
+        if c > 7 or c < 0:
+            raise ValueError("Channel out of range [0,7]")
 
-        self.write_byte(1 << i)
-        self.write_byte(1 << i)
+        # Write channel to TCA twice (as once didn't seem to be reliable):
+        self.write_byte(1 << c)
+        self.write_byte(1 << c)
