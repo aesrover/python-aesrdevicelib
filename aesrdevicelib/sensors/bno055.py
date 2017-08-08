@@ -21,7 +21,7 @@
 # THE SOFTWARE.
 import logging
 import time
-from .i2c_device import I2cDevice
+from ..i2c_device import I2cDevice
 
 
 # I2C addresses

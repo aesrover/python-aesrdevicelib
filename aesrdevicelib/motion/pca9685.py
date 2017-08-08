@@ -22,8 +22,7 @@ from __future__ import division
 import logging
 import time
 import math
-from ..sensors import i2c_device
-
+from .. import i2c_device
 
 # Registers/etc:
 PCA9685_ADDRESS    = 0x40

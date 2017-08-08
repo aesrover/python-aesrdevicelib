@@ -1,4 +1,4 @@
-from . import i2c_device
+from .. import i2c_device
 import time
 
 class TSYS01(i2c_device.I2cDevice):

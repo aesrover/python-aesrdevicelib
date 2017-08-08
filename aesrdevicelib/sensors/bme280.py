@@ -25,8 +25,7 @@
 import logging
 import time
 
-from . import i2c_device
-
+from .. import i2c_device
 
 # BME280 default address.
 BME280_I2CADDR = 0x77

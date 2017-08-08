@@ -2,8 +2,9 @@
 # Link to original source (contains some errors that were fixed in this version): 
 #            https://github.com/ControlEverythingCommunity/MS5803-14BA/blob/master/Python/MS5803_14BA.py  
 
-from . import i2c_device
+from .. import i2c_device
 import time 
+
 
 class MS5803(i2c_device.I2cDevice):
     '''Library for the SparkFun MS5803-12BA Pressure Sensor'''

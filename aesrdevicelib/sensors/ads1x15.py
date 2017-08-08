@@ -19,8 +19,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 import time
-from . import i2c_device
-
+from .. import i2c_device
 
 # Register and other configuration values:
 ADS1x15_DEFAULT_ADDRESS = 0x48

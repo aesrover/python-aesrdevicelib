@@ -1,4 +1,4 @@
-from ..sensors import i2c_device
+from .. import i2c_device
 from .pca9685 import PCA9685
 
 
