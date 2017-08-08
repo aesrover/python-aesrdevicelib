@@ -19,21 +19,11 @@ class I2cDevice(object):
                                          text_class.__name__, name))
 
         # Return a modified function if the attribute is a function:
-        if hasattr(attr, '__call__'):
-            def newfunc(*args, **kwargs):
-                if from_bus:
-                    for f in self.pre_trans_funcs:
-                        func, ak = f.popitem()  # Get function and args from single key-pair in array element
-                        func(*(ak[0]), **(ak[1]))  # run all pre-call functions
-                    result = attr(self.i2cAddress, *args, **kwargs)
-
-                else:
-                    result = attr(*args, **kwargs)
-                return result
+        if hasattr(attr, '__call__') and from_bus:
 
             # Return a function or the original attribute depending on what
             #   type the requested attribute was
-            return newfunc
+            return self.reg_access_meth(attr, self.i2cAddress)
         else:
             return attr
 
@@ -53,10 +43,20 @@ class I2cDevice(object):
                 kwargs = pre_func_kwargs
             self.reg_pre_trans_func(pre_func, *args, **kwargs)
 
+        self.read_byte_data = self.reg_access_meth(self.read_byte_data)
+        self.read_word_data = self.reg_access_meth(self.read_word_data)
         # Test if device is connected by transmitting just the slave address
         # and checking for an ACK from the device:
         if test_device:
             self.write_quick()
+
+    def reg_access_meth(self, m: callable, *auto_args, **auto_kwargs):
+        def newfunc(*args, **kwargs):
+            for f in self.pre_trans_funcs:
+                func, ak = dict(f).popitem()  # Get function and args from single key-pair in array element
+                func(*(ak[0]), **(ak[1]))  # run all pre-call functions
+            return m(*auto_args, *args, **auto_kwargs, **kwargs)
+        return newfunc
 
     def read_word_data(self, cmd, little_endian=True, signed=False):
         d = self.bus.read_word_data(self.i2cAddress, cmd)
