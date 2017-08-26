@@ -64,6 +64,8 @@ class PCA9685(object):
 
     def __init__(self, address=PCA9685_ADDRESS, **kwargs):
         """Initialize the PCA9685."""
+        self.freq = None
+
         # Setup I2C interface for the device.
         self._device = i2c_device.I2cDevice(address, **kwargs)
         self.set_all_pwm(0, 0)
@@ -92,6 +94,20 @@ class PCA9685(object):
         self._device.write_byte_data(MODE1, oldmode)
         time.sleep(0.005)
         self._device.write_byte_data(MODE1, oldmode | 0x80)
+
+        self.freq = freq_hz
+
+    def _calc_pwm_val(self, ms) -> int:
+        max_ms = (1/self.freq)*1000
+        ms_tick = max_ms/4096
+
+        return int(ms/ms_tick)
+
+    def set_pwm_ms(self, channel, ms):
+        self.set_pwm(channel, 0, self._calc_pwm_val(ms))
+
+    def set_all_pwm_ms(self, ms):
+        self.set_all_pwm(0, self._calc_pwm_val(ms))
 
     def set_pwm(self, channel, on, off):
         """Sets a single PWM channel."""
