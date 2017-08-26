@@ -23,6 +23,7 @@ import logging
 import time
 import math
 from .. import i2c_device
+from ..base.interface import PWMInterface
 
 # Registers/etc:
 PCA9685_ADDRESS    = 0x40
@@ -59,7 +60,7 @@ def software_reset(i2c=None, **kwargs):
     d.write_byte_data(0x06)  # SWRST
 
 
-class PCA9685(object):
+class PCA9685:
     """PCA9685 PWM LED/servo controller."""
 
     def __init__(self, address=PCA9685_ADDRESS, **kwargs):
@@ -76,6 +77,9 @@ class PCA9685(object):
         mode1 = mode1 & ~SLEEP  # wake up (reset sleep)
         self._device.write_byte_data(MODE1, mode1)
         time.sleep(0.005)  # wait for oscillator
+
+    def get_freq(self):  # To allow channel objects to stay updated
+        return self.freq
 
     def set_pwm_freq(self, freq_hz):
         """Set the PWM frequency to the provided value in hertz."""
@@ -122,3 +126,19 @@ class PCA9685(object):
         self._device.write_byte_data(ALL_LED_ON_H, on >> 8)
         self._device.write_byte_data(ALL_LED_OFF_L, off & 0xFF)
         self._device.write_byte_data(ALL_LED_OFF_H, off >> 8)
+
+    def get_channel(self, channel):
+        return PCA9685Channel(self, channel)
+
+
+class PCA9685Channel(PWMInterface):
+    def __init__(self, p: PCA9685, channel: int):
+        super().__init__(p.get_freq, 0.999999999)
+        self.p: PCA9685 = p
+        self.c = channel
+
+    def set_pwm_freq(self, freq_hz):
+        self.p.set_pwm_freq(freq_hz)
+
+    def _set_pwm(self, ms):
+        self.p.set_pwm_ms(self.c, ms)
