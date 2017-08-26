@@ -2,14 +2,19 @@ from gps3 import agps3
 import threading
 import time
 
+from typing import Tuple
 
-class GPSRead:
+from ..base.navigation import PositionTransducer
+
+
+class GPSRead(PositionTransducer):
     _VALID_READ_TIME = 3
     
     locationData = None
     timeOfRead = None
     
-    def __init__(self, *args, **kwargs):
+    def __init__(self, itype=None, **other):
+        super().__init__("GPS", itype=None, **other)
         # Setup gps connection and data stream:
         self.sock = agps3.GPSDSocket()
         self.stream = agps3.DataStream()
@@ -34,10 +39,14 @@ class GPSRead:
         self.running = False
         self.thread.join()
         self.sock.close()
-    
-    def readLocationData(self):
+
+    def read(self):
         if self.locationData is None:
             raise ValueError("No successful reads")
         if time.time() - self.timeOfRead > self._VALID_READ_TIME:
             raise ValueError("No recent reads")
         return self.locationData
+
+    def read_xy_pos(self) -> Tuple[float, float]:
+        p = self.read()
+        return p['lon'], p['lat']

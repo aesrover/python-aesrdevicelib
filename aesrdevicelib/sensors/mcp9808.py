@@ -1,7 +1,8 @@
-from .. import i2c_device
+from ..i2c_device import I2cDevice
+from ..base.transducer import Transducer
 
 
-class MCP9808(i2c_device.I2cDevice):
+class MCP9808(I2cDevice, Transducer):
     '''Library for the Adafruit MCP9808 Temperature sensor'''
     
     _DEFAULT_I2C_ADDRESS    = 0x18
@@ -15,8 +16,11 @@ class MCP9808(i2c_device.I2cDevice):
     _REG_MANUF_ID           = 0x06
     _REG_DEVICE_ID          = 0x07
     
-    def __init__(self, i2cAddress= _DEFAULT_I2C_ADDRESS, *args, **kwargs):
-        super(MCP9808, self).__init__(i2cAddress, *args, **kwargs)
+    def __init__(self, i2cAddress= _DEFAULT_I2C_ADDRESS, itype=None, other_data=None, **kwargs):
+        super(MCP9808, self).__init__(i2cAddress, **kwargs)
+        if other_data is None:
+            other_data = {}
+        Transducer.__init__(self, "TEMP", itype, **other_data)
     
     def readC(self):
         # Read temperature value
@@ -34,5 +38,5 @@ class MCP9808(i2c_device.I2cDevice):
     def readF(self):
         return (self.readC() * 9/5) + 32
     
-    def read(self, *args, **kwargs):
-        return self.readC(*args, **kwargs)
+    def read(self):
+        return {'temp_c': self.readC()}

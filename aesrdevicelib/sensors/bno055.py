@@ -22,6 +22,7 @@
 import logging
 import time
 from ..i2c_device import I2cDevice
+from ..base.navigation import HeadingTransducer
 
 
 # I2C addresses
@@ -207,9 +208,12 @@ OPERATION_MODE_NDOF                  = 0X0C
 logger = logging.getLogger(__name__)
 
 
-class BNO055(I2cDevice):
-    def __init__(self, i2c_address=BNO055_ADDRESS_A, *args, mode=OPERATION_MODE_NDOF, **kwargs):
+class BNO055(I2cDevice, HeadingTransducer):
+    def __init__(self, atype, itype=None, other_data=None, i2c_address=BNO055_ADDRESS_A, *args, mode=OPERATION_MODE_NDOF, **kwargs):
         super().__init__(i2c_address, *args, **kwargs)
+        if other_data is not None:
+            other_data = {}
+        HeadingTransducer.__init__(self, atype, itype, **other_data)
 
         """Initialize the BNO055 sensor.  Must be called once before any other
         BNO055 library functions.  Will return True if the BNO055 was

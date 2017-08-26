@@ -1,11 +1,14 @@
-from .. import i2c_device
 import time
 
-class TSYS01(i2c_device.I2cDevice):
+from ..i2c_device import I2cDevice
+from ..base.transducer import Transducer
+
+
+class TSYS01(I2cDevice, Transducer):
     '''Library for the Blue Robotics TSYSO1 Fast-Response Temperature Sensor'''
     
     _DEFAULT_I2C_ADDRESS = 0x77          # CSB = 0 (GND)
-    
+
     RESET                = 0x1E
     PROM_READ            = 0xA0
     ADC_READ             = 0x00
@@ -19,8 +22,11 @@ class TSYS01(i2c_device.I2cDevice):
     # C[4] = k4       address = 0xA2
     C = []
         
-    def __init__(self, i2cAddress= _DEFAULT_I2C_ADDRESS, *args, **kwargs):
-        super(TSYS01, self).__init__(i2cAddress, *args, **kwargs)
+    def __init__(self, i2cAddress= _DEFAULT_I2C_ADDRESS, itype=None, other_data=None, **kwargs):
+        super(TSYS01, self).__init__(i2cAddress, **kwargs)
+        if other_data is None:
+            other_data = {}
+        Transducer.__init__(self, "PRES", itype, **other_data)
         
         # --- Reset Sequence ---
         # TSYS01 address, 0x77(119)
@@ -34,7 +40,7 @@ class TSYS01(i2c_device.I2cDevice):
             data = self.read_i2c_block_data(self.PROM_READ+(10-i*2), 2)
             self.C.append((data[0] << 8) + data[1])
             
-    def read(self):
+    def read_c(self):
         
         self.write_byte(self.ACD_TEMP_CONV)
         
@@ -57,3 +63,6 @@ class TSYS01(i2c_device.I2cDevice):
                (-1.5) * self.C[0] * (10 ** -2) )
                
         return TEMP
+
+    def read(self):
+        return {'temp_c': self.read_c()}

@@ -1,14 +1,17 @@
 from .. import i2c_device
 from .pca9685 import PCA9685
+from ..base.motor import Thruster
 
 
-class BlueESC_I2C(i2c_device.I2cDevice):
+
+class BlueESC_I2C(i2c_device.I2cDevice, Thruster):
     """Library for the Blue Robotics BlueESC"""
     _DEFAULT_I2C_ADDRESS = 0x29
     _THROTTLE_REGISTER = 0x00
 
-    def __init__(self, i2cAddress= _DEFAULT_I2C_ADDRESS, *args, **kwargs):
+    def __init__(self, v, a, i2cAddress= _DEFAULT_I2C_ADDRESS, *args, **kwargs):
         super().__init__(i2cAddress, *args, **kwargs)
+        Thruster.__init__(self, v, a)
 
     def start(self):
         self.write_word_data(self._THROTTLE_REGISTER, 0)
@@ -25,13 +28,14 @@ class BlueESC_I2C(i2c_device.I2cDevice):
         self.set_power(power)
 
 
-class BlueESC_PCA9685():
+class BlueESC_PCA9685(Thruster):
     # PCA9685 PWM values for BlueESC (full rev, init, full fwd)
     BLUEESC_PWM_FREQS = {400: (2005, 2685, 2735, 2785, 3450), 350: (1760, 2370, 2400, 2455, 3050), 300: (1505, 2015, 2050, 2086, 2595)}
 
-    def __init__(self, channel: int, pca9685: PCA9685=None, pwm_freq: int=300,
+    def __init__(self, v, a, channel: int, pca9685: PCA9685=None, pwm_freq: int=300,
                  **kwargs: "PCA9685 kwargs (if not supplied)"):
         self.channel = channel
+        super().__init__(v, a)
 
         if pwm_freq not in self.BLUEESC_PWM_FREQS:
             raise ValueError("PWM Frequency must be one of {}.".format(list(self.BLUEESC_PWM_FREQS.keys())))

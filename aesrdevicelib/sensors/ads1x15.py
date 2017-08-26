@@ -20,6 +20,7 @@
 # THE SOFTWARE.
 import time
 from .. import i2c_device
+from ..base.transducer import Transducer
 
 # Register and other configuration values:
 ADS1x15_DEFAULT_ADDRESS = 0x48
@@ -77,8 +78,11 @@ ADS1x15_CONFIG_COMP_QUE_DISABLE = 0x0003
 class ADS1x15(i2c_device.I2cDevice):
     """Base functionality for ADS1x15 analog to digital converters."""
 
-    def __init__(self, i2cAddress=ADS1x15_DEFAULT_ADDRESS, *args, **kwargs):
-        super(ADS1x15, self).__init__(i2cAddress, *args, **kwargs)
+    def __init__(self, i2c_address=ADS1x15_DEFAULT_ADDRESS, *args, **kwargs):  # atype, itype=None, other_data=None,
+        super(ADS1x15, self).__init__(i2c_address, *args, **kwargs)
+        #if other_data is None:
+        #    other_data = {}
+        #Transducer.__init__(self, atype, itype, **other_data)
 
     def _data_rate_default(self):
         """Retrieve the default data rate for this ADC (in samples per second).

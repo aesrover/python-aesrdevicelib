@@ -24,9 +24,9 @@ SOFTWARE.
 
 # From: https://github.com/bluerobotics/ms5837-python with updates for python3
 
-import smbus
 from time import sleep
-from .. import i2c_device
+from ..i2c_device import I2cDevice
+from ..base.transducer import Transducer
 
 # Default I2C address:
 DEFAULT_ADDRESS = 0x76
@@ -63,7 +63,7 @@ UNITS_Farenheit  = 2
 UNITS_Kelvin     = 3
 
     
-class MS5837(i2c_device.I2cDevice):
+class MS5837(I2cDevice, Transducer):
     
     # Registers
     _MS5837_ADDR             = 0x76  
@@ -73,9 +73,14 @@ class MS5837(i2c_device.I2cDevice):
     _MS5837_CONVERT_D1_256   = 0x40
     _MS5837_CONVERT_D2_256   = 0x50
     
-    def __init__(self, model=MODEL_30BA, i2c_address=DEFAULT_ADDRESS, *args, **kwargs):
-        super().__init__(i2c_address, *args, **kwargs)
+    def __init__(self, model=MODEL_30BA, i2c_address=DEFAULT_ADDRESS, def_oversample=OSR_8192, itype=None,
+                 other_data=None, **kwargs):
+        super().__init__(i2c_address, **kwargs)
+        if other_data is None:
+            other_data = {}
+        Transducer.__init__(self, "PRES", itype, **other_data)
 
+        self.def_oversample = def_oversample
         self._model = model
 
         self._fluidDensity = DENSITY_FRESHWATER
@@ -101,7 +106,7 @@ class MS5837(i2c_device.I2cDevice):
         if crc != self._crc4(self._C):
             raise ValueError("MS537 PROM read error, CRC failed!")
 
-    def read(self, oversampling=OSR_8192):
+    def _read_value(self, oversampling=OSR_8192):
         if oversampling < OSR_256 or oversampling > OSR_8192:
             print("Invalid oversampling option!")
             return False
@@ -231,6 +236,12 @@ class MS5837(i2c_device.I2cDevice):
         self.n_rem = n_rem
     
         return n_rem ^ 0x00
+
+    def read(self, oversampling=None):
+        if oversampling is None:
+            oversampling = self.def_oversample
+        self.read(oversampling)
+        return {'pres_mbar': self.pressure(UNITS_mbar), 'temp_c': self.temperature(UNITS_Centigrade)}
 
 
 class MS5837_30BA(MS5837):

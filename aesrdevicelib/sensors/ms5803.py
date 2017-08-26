@@ -2,17 +2,19 @@
 # Link to original source (contains some errors that were fixed in this version): 
 #            https://github.com/ControlEverythingCommunity/MS5803-14BA/blob/master/Python/MS5803_14BA.py  
 
-from .. import i2c_device
-import time 
+import time
+
+from ..i2c_device import I2cDevice
+from ..base.transducer import Transducer
 
 
-class MS5803(i2c_device.I2cDevice):
-    '''Library for the SparkFun MS5803-12BA Pressure Sensor'''
+class MS5803(I2cDevice, Transducer):
+    """ Library for the SparkFun MS5803-12BA Pressure Sensor. """
     
     PROM_READ = 0xA2
     _DEFAULT_I2C_ADDRESS = 0x76
-    
-    
+
+
     
     '''Version 2'''
     # PROM Calibration values stored in the C array
@@ -37,8 +39,11 @@ class MS5803(i2c_device.I2cDevice):
     C6 = 0      #Temperature coefficient of the temperature
     '''
     
-    def __init__(self, i2cAddress= _DEFAULT_I2C_ADDRESS, *args, **kwargs):
-        super(MS5803, self).__init__(i2cAddress, *args, **kwargs)
+    def __init__(self, i2cAddress= _DEFAULT_I2C_ADDRESS, itype=None, other_data=None, **kwargs):
+        super(MS5803, self).__init__(i2cAddress, **kwargs)
+        if other_data is None:
+            other_data = {}
+        Transducer.__init__(self, "PRES", itype, **other_data)
         
         # MS5803_14BA address, 0x76(118)
         # 0x1E(30)	Reset command
@@ -161,4 +166,4 @@ class MS5803(i2c_device.I2cDevice):
         cTemp = TEMP / 100.0
                 
         # return values in a dictionary
-        return {"mbar": pressure, "temp": cTemp, "tempunit": "degC"}
+        return {"pres_mbar": pressure, "temp_c": cTemp}
