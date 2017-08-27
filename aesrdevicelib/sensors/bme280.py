@@ -26,6 +26,7 @@ import logging
 import time
 
 from .. import i2c_device
+from ..base.transducer import Transducer
 
 # BME280 default address.
 BME280_I2CADDR = 0x77
@@ -89,9 +90,14 @@ BME280_REGISTER_CONFIG = 0xF5
 BME280_REGISTER_DATA = 0xF7
 
 
-class BME280(i2c_device.I2cDevice):
-    def __init__(self, t_mode=BME280_OSAMPLE_1, p_mode=BME280_OSAMPLE_1, h_mode=BME280_OSAMPLE_1,
-                 standby=BME280_STANDBY_250, filter=BME280_FILTER_off, i2c_address=BME280_I2CADDR, **kwargs):
+class BME280(i2c_device.I2cDevice, Transducer):
+    def __init__(self, itype=None, other_data=None, t_mode=BME280_OSAMPLE_1, p_mode=BME280_OSAMPLE_1,
+                 h_mode=BME280_OSAMPLE_1, standby=BME280_STANDBY_250, filter=BME280_FILTER_off,
+                 i2c_address=BME280_I2CADDR, **kwargs):
+        if other_data is None:
+            other_data = {}
+        Transducer.__init__(self, "ENVIRON", itype, **other_data)
+
         self._logger = logging.getLogger('Adafruit_BMP.BMP085')
         # Check that t_mode is valid.
         if t_mode not in [BME280_OSAMPLE_1, BME280_OSAMPLE_2, BME280_OSAMPLE_4,
@@ -123,11 +129,7 @@ class BME280(i2c_device.I2cDevice):
                 'Unexpected filter value {0}.'.format(filter))
         self._filter = filter
 
-        try:
-            super().__init__(i2c_address, **kwargs)
-        except IOError:
-            print("Unable to communicate with sensor, check connection and permissions.")
-            exit()
+        super().__init__(i2c_address, **kwargs)
         # Load calibration values.
         self._load_calibration()
         self.write_byte_data(BME280_REGISTER_CONTROL, 0x24)  # Sleep mode
@@ -276,3 +278,11 @@ class BME280(i2c_device.I2cDevice):
         dewpoint_c = self.get_dewpoint()
         dewpoint_f = dewpoint_c * 1.8 + 32
         return dewpoint_f
+
+    def read(self):
+        self.read_data()
+        return {
+            'temp_cel': self.get_temperature(),
+            'pres_pas': self.get_pressure(),
+            'hum_per': self.get_humidity(),
+        }

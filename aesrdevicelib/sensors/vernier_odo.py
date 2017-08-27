@@ -1,7 +1,7 @@
-from . import ads1115
+from .ads1115 import ADS1115
 
 
-class VernierODO(ads1115.ADS1115):
+class VernierODO(ADS1115):
     def __init__(self, *args, **kwargs):
         super(VernierODO, self).__init__(*args, **kwargs)
 
@@ -11,6 +11,6 @@ class VernierODO(ads1115.ADS1115):
         return output
 
     def read(self):
-        adc = super(VernierODO, self).read()
-        oxygenLevel = self.convertMGL(adc)
-        return {'rawADC': adc, 'mgL': oxygenLevel}
+        d = super().read()
+        d['mgL'] = self.convertMGL(d['adc_val'])
+        return d

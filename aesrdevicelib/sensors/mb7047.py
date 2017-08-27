@@ -1,7 +1,10 @@
-from .. import i2c_device
 import time
 
-class MB7047(i2c_device.I2cDevice):
+from ..i2c_device import I2cDevice
+from ..base.transducer import Transducer
+
+
+class MB7047(I2cDevice, Transducer):
     '''Library for the MaxBotix 12CXL-MaxSonar-WR Sensor'''
     
     _DEFAULT_I2C_ADDRESS = 0x70
@@ -17,9 +20,12 @@ class MB7047(i2c_device.I2cDevice):
     
     loopNumber = 0           # The number of bad value loops that have been done
     
-    def __init__(self, i2cAddress= _DEFAULT_I2C_ADDRESS, *args, **kwargs):
-        super(MB7047, self).__init__(i2cAddress, *args, **kwargs)
-    
+    def __init__(self, i2cAddress= _DEFAULT_I2C_ADDRESS, itype=None, other_data=None, **kwargs):
+        super(MB7047, self).__init__(i2cAddress, **kwargs)
+        if other_data is None:
+            other_data = {}
+        Transducer.__init__(self, "SONAR", itype, **other_data)
+
     # Read distance in centimeters        
     def readCM(self):
         if self.loopNumber > (self._MAX_LOOPS - 1):
@@ -50,8 +56,8 @@ class MB7047(i2c_device.I2cDevice):
         return value
     
     # Main read function
-    def read(self, *args, **kwargs):
-        return self.readCM(*args, **kwargs)
+    def read(self):
+        return {'cm': self.readCM()}
         
-    def readM(self, *args, **kwargs):
-        return (self.readCM(*args, **kwargs))/100
+    def readM(self):
+        return (self.readCM())/100
