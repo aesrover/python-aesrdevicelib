@@ -11,7 +11,7 @@ class ADS1115(i2c_device.I2cDevice, Transducer):
 
     def __init__(self, itype=None, other_data=None, i2cAddress=_DEFAULT_I2C_ADDRESS, *args, **kwargs):
         super(ADS1115, self).__init__(i2cAddress, *args, **kwargs)
-        if other_data is not None:
+        if other_data is None:
             other_data = {}
         Transducer.__init__(self, "ADC", itype, **other_data)
 

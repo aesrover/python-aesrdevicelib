@@ -94,7 +94,7 @@ class BME280(i2c_device.I2cDevice, Transducer):
     def __init__(self, itype=None, other_data=None, t_mode=BME280_OSAMPLE_1, p_mode=BME280_OSAMPLE_1,
                  h_mode=BME280_OSAMPLE_1, standby=BME280_STANDBY_250, filter=BME280_FILTER_off,
                  i2c_address=BME280_I2CADDR, **kwargs):
-        if other_data is not None:
+        if other_data is None:
             other_data = {}
         Transducer.__init__(self, "ENVIRON", itype, **other_data)
 
