@@ -89,13 +89,13 @@ class MS5803(I2cDevice, Transducer):
             
     # Read function, returns a dictionary of the pressure and temperature values      
     def read(self):
-        
-        #---- Read digital pressure and temperature data ----
+        adc_sleep = 0.00904 + 0.00001
+        # ---- Read digital pressure and temperature data ----
         # MS5803_14BA address, 0x76(118)
         # 0x48(72)	Pressure conversion(OSR = 4096) command
         self.write_byte(0x48)
         
-        time.sleep(0.5)
+        time.sleep(adc_sleep)
         
         # Read digital pressure value
         # Read data back from 0x00(0), 3 bytes
@@ -107,7 +107,7 @@ class MS5803(I2cDevice, Transducer):
         # 0x58(88)	Temperature conversion(OSR = 4096) command
         self.write_byte(0x58)
         
-        time.sleep(0.5)
+        time.sleep(adc_sleep)
         
         # Read digital temperature value
         # Read data back from 0x00(0), 3 bytes
