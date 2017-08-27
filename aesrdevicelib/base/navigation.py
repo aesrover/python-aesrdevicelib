@@ -2,7 +2,7 @@
 from typing import Tuple
 
 # Local:
-from base.transducer import Transducer
+from .transducer import Transducer
 
 
 class PositionTransducer(Transducer):
