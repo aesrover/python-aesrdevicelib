@@ -209,16 +209,19 @@ logger = logging.getLogger(__name__)
 
 
 class BNO055(I2cDevice, HeadingTransducer):
-    def __init__(self, atype, itype=None, other_data=None, i2c_address=BNO055_ADDRESS_A, *args, mode=OPERATION_MODE_NDOF, **kwargs):
-        super().__init__(i2c_address, *args, **kwargs)
-        if other_data is not None:
-            other_data = {}
-        HeadingTransducer.__init__(self, atype, itype, **other_data)
-
+    def __init__(self, itype=None, other_data=None, i2c_address=BNO055_ADDRESS_A, *args,
+                 mode=OPERATION_MODE_NDOF, heading_idx=0, **kwargs):
         """Initialize the BNO055 sensor.  Must be called once before any other
         BNO055 library functions.  Will return True if the BNO055 was
         successfully initialized, and False otherwise.
         """
+        super().__init__(i2c_address, *args, **kwargs)
+        if other_data is None:
+            other_data = {}
+        HeadingTransducer.__init__(self, "IMU", itype, **other_data)
+
+        self.heading_idx = heading_idx
+
         # Save the desired normal operation mode.
         self._mode = mode
         # First send a thow-away command and ignore any response or I2C errors
@@ -544,3 +547,9 @@ class BNO055(I2cDevice, HeadingTransducer):
     def read_temp(self):
         """Return the current temperature in Celsius."""
         return self.read_byte_data(BNO055_TEMP_ADDR, signed=True)
+
+    def read(self):
+        return {"rot": self.read_euler(), "lin": self.read_linear_acceleration()}
+
+    def read_heading(self):
+        return self.read_euler()[self.heading_idx]
