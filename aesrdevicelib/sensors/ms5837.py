@@ -106,10 +106,9 @@ class MS5837(I2cDevice, Transducer):
         if crc != self._crc4(self._C):
             raise ValueError("MS537 PROM read error, CRC failed!")
 
-    def _read_value(self, oversampling=OSR_8192):
+    def _read_data(self, oversampling=OSR_8192):
         if oversampling < OSR_256 or oversampling > OSR_8192:
-            print("Invalid oversampling option!")
-            return False
+            raise ValueError("Invalid oversampling option!")
         
         # Request D1 conversion (temperature)
         self.write_byte(self._MS5837_CONVERT_D1_256 + 2*oversampling)
@@ -240,7 +239,7 @@ class MS5837(I2cDevice, Transducer):
     def read(self, oversampling=None):
         if oversampling is None:
             oversampling = self.def_oversample
-        self.read(oversampling)
+        self._read_data(oversampling)
         return {'pres_mbar': self.pressure(UNITS_mbar), 'temp_c': self.temperature(UNITS_Centigrade)}
 
 
