@@ -44,7 +44,7 @@ class TSYS01(I2cDevice, Transducer):
         
         self.write_byte(self.ACD_TEMP_CONV)
         
-        time.sleep(0.01)
+        time.sleep(0.00904 + 0.00001)
         
         data = self.read_i2c_block_data(self.ADC_READ, 3)
         D1 = (data[0] << 16) + (data[1] << 8) + data[2]
