@@ -129,11 +129,7 @@ class BME280(i2c_device.I2cDevice, Transducer):
                 'Unexpected filter value {0}.'.format(filter))
         self._filter = filter
 
-        try:
-            super().__init__(i2c_address, **kwargs)
-        except IOError:
-            print("Unable to communicate with sensor, check connection and permissions.")
-            exit()
+        super().__init__(i2c_address, **kwargs)
         # Load calibration values.
         self._load_calibration()
         self.write_byte_data(BME280_REGISTER_CONTROL, 0x24)  # Sleep mode
