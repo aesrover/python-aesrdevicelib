@@ -15,12 +15,10 @@ class BlueESC_I2C(i2c_device.I2cDevice, Thruster):
     def start(self):
         self.write_word_data(self._THROTTLE_REGISTER, 0)
 
-    def set_power(self, power: float):
-        if power < -1 or power > 1:
-            raise ValueError("Power must be within [-1,1].")
-        power *= 32767
-        power = round(power)
-        self.write_word_data(self._THROTTLE_REGISTER, power)
+    def _set_motor_power(self, p: float):
+        p *= 32767
+        p = round(p)
+        self.write_word_data(self._THROTTLE_REGISTER, p)
 
     def start_power(self, power: float):
         self.start()
@@ -59,19 +57,16 @@ class BlueESC_PCA9685(Thruster):
         """ Send initialization to ESC. Must be run first, or after a call to `disable`. """
         self.set_pwm(0, self.mid)
 
-    def set_power(self, pwr: float):
+    def _set_motor_power(self, p: float):
         """ Set the power of the BlueESC (in the range of -1,1). """
-        if pwr > 1 or pwr < -1:
-            raise ValueError("Power must be within [-1,1].")
+        p_val = self.mid
+        if p < 0:
+            p_val = float(p) * (self.min_bck - self.full_bck) + self.min_bck
+        elif p > 0:
+            p_val = float(p) * (self.full_fwd - self.min_fwd) + self.min_fwd
+        p_val = round(p_val)
 
-        pwr_val = self.mid
-        if pwr < 0:
-            pwr_val = float(pwr) * (self.min_bck - self.full_bck) + self.min_bck
-        elif pwr > 0:
-            pwr_val = float(pwr) * (self.full_fwd - self.min_fwd) + self.min_fwd
-        pwr_val = round(pwr_val)
-
-        self.set_pwm(0, pwr_val)
+        self.set_pwm(0, p_val)
 
     def stop(self):
         """ Stop the BlueESC (will stay initialized). """
