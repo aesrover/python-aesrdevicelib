@@ -3,7 +3,6 @@ from .pca9685 import PCA9685
 from ..base.motor import Thruster
 
 
-
 class BlueESC_I2C(i2c_device.I2cDevice, Thruster):
     """Library for the Blue Robotics BlueESC"""
     _DEFAULT_I2C_ADDRESS = 0x29
