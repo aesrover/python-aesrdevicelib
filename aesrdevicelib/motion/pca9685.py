@@ -70,7 +70,7 @@ class PCA9685(I2cDevice):
 
         # Setup I2C interface for the device.
         self.set_all_pwm(0, 0)
-        self._device.write_byte_data(MODE2, OUTDRV)
+        self.write_byte_data(MODE2, OUTDRV)
         self.write_byte_data(MODE1, ALLCALL)
         time.sleep(0.005)  # wait for oscillator
         mode1 = self.read_byte_data(MODE1, False)
