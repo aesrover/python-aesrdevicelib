@@ -45,7 +45,7 @@ class GPSRead(PositionTransducer):
             raise ValueError("No successful reads")
         if time.time() - self.timeOfRead > self._VALID_READ_TIME:
             raise ValueError("No recent reads")
-        return self.locationData
+        return dict(self.locationData)
 
     def read_xy_pos(self) -> Tuple[float, float]:
         p = self.read()
