@@ -1,6 +1,8 @@
 from gps3 import agps3
 import threading
 import time
+import math
+import numpy as np
 
 from typing import Tuple
 
@@ -50,3 +52,9 @@ class GPSRead(PositionTransducer):
     def read_xy_pos(self) -> Tuple[float, float]:
         p = self.read()
         return p['lon'], p['lat']
+
+    def diff_scale(self, x1, y1, x2, y2):
+        return np.subtract((x1, y1), (x2, y2)) * np.array((math.cos(math.radians(y2)) * 111320., 110540.))
+
+    def scale(self, x, y):
+        return self.diff_scale(0, 0, -x, -y)
