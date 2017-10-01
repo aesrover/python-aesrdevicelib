@@ -22,7 +22,7 @@ class PositionTransducer(Transducer):
         raise NotImplementedError
 
     def read_xy_diff_scaled(self, dx, dy):
-        self.diff_scale(*self.read_xy_pos(), dx, dy)
+        return self.diff_scale(*self.read_xy_pos(), dx, dy)
 
 
 class HeadingTransducer(Transducer):
