@@ -12,8 +12,17 @@ class PositionTransducer(Transducer):
     def read(self):
         raise NotImplementedError
 
+    def diff_scale(self, x1, y1, x2, y2):
+        return x1-x2, y1-y2
+
+    def scale(self, x, y):
+        return self.diff_scale(x, y, 0, 0)
+
     def read_xy_pos(self) -> Tuple[float, float]:
         raise NotImplementedError
+
+    def read_xy_diff_scaled(self, dx, dy):
+        return self.diff_scale(dx, dy, *self.read_xy_pos())
 
 
 class HeadingTransducer(Transducer):
