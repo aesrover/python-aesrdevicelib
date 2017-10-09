@@ -18,3 +18,11 @@ class Thruster(Motor):
 
     def _set_motor_power(self, p: float):
         raise NotImplementedError
+
+
+class ControlledMotor(Motor):
+    """ A motor capable of relative movement by tick number. """
+
+    def move_ticks(self, t, p=None):
+        """ Move t ticks, at speed p. Use default p if not given. """
+        raise NotImplementedError
