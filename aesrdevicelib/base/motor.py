@@ -25,6 +25,10 @@ class ControlledMotor(Motor):
     def __init__(self):
         self.curr_tick = 0
 
+    def stop(self):
+        """ Stop the motor. """
+        raise NotImplementedError
+
     def _move_tick(self, rel_t, p=None):
         """ Move by some number of ticks, at speed p. To be implemented by subclasses. """
         raise NotImplementedError

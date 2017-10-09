@@ -15,6 +15,10 @@ class TimedControlledMotor(ControlledMotor):
         super().__init__()
         self.m = m
         self.def_p = def_p
+        self.cutoff = True
+
+    def stop(self):
+        self.cutoff = True
 
     def _set_motor_power(self, p: float):
         """ Direct set of motor power. """
@@ -27,13 +31,17 @@ class TimedControlledMotor(ControlledMotor):
         :arg rel_t: Number of seconds to move
         :arg p: Power to move motor at. Defaults to initialized default power (if None)
         """
-
+        self.cutoff = False
         if p is None:
             p = self.def_p
 
         p *= math.copysign(1, rel_t)
         try:
             self.m.set_power(p)
-            time.sleep(abs(rel_t))
+            ts = time.time()
+            while (time.time()-ts) < abs(rel_t):
+                if self.cutoff:
+                    break
+                time.sleep(0.05)
         finally:
             self.m.set_power(0)
