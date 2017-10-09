@@ -29,6 +29,10 @@ class ControlledMotor(Motor):
         """ Stop the motor. """
         raise NotImplementedError
 
+    def is_moving(self) -> bool:
+        """ Returns bool to signal if motor is moving. """
+        raise NotImplementedError
+
     def _move_tick(self, rel_t, p=None):
         """ Move by some number of ticks, at speed p. To be implemented by subclasses. """
         raise NotImplementedError
