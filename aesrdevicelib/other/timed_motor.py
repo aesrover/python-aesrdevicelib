@@ -20,15 +20,14 @@ class TimedControlledMotor(ControlledMotor):
 
     def stop(self):
         self.cutoff = True
-
-    def is_moving(self):
-        return self.moving
+        while self.is_moving():
+            pass
 
     def _set_motor_power(self, p: float):
         """ Direct set of motor power. """
         self.m._set_motor_power(p)
 
-    def _move_tick(self, rel_t, p=None):
+    def _move_tick(self, rel_t, p=None) -> float:
         """
         Move for t seconds, at power p.
 
@@ -39,16 +38,21 @@ class TimedControlledMotor(ControlledMotor):
         if p is None:
             p = self.def_p
 
-        p *= math.copysign(1, rel_t)
+        move_time = 0
+
+        move_sign = math.copysign(1, rel_t)
+        p *= move_sign
         try:
             self.m.set_power(p)
-            self.moving = True
 
             ts = time.time()
-            while (time.time()-ts) < abs(rel_t):
+
+            while move_time < abs(rel_t):
+                move_time = time.time() - ts
                 if self.cutoff:
                     break
                 time.sleep(0.05)
         finally:
             self.m.set_power(0)
-            self.moving = False
+
+        return move_time * move_sign

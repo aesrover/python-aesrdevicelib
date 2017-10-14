@@ -28,6 +28,7 @@ class ControlledMotor(Motor, Thread):
     def __init__(self):
         self.curr_tick = 0
         self.curr_job = None
+        self.moving = False
 
         Thread.__init__(self, target=self._move_thread)
         self.running = True
@@ -37,13 +38,15 @@ class ControlledMotor(Motor, Thread):
         while self.running:
             if self.curr_job is not None:
                 last_job = self.curr_job
-                self._move_tick(*last_job)
+                self.curr_tick += self._move_tick(*last_job)
 
                 if self.curr_job == last_job:  # Not changed during run
                     self.curr_job = None
+                    self.moving = False
 
     def _set_job(self, rel_t, p):
         self.stop()
+        self.moving = True
         self.curr_job = (rel_t, p)
         while not self.is_moving():
             pass
@@ -58,20 +61,20 @@ class ControlledMotor(Motor, Thread):
 
     def is_moving(self) -> bool:
         """ Returns bool to signal if motor is moving. """
-        raise NotImplementedError
+        return self.moving
 
-    def _move_tick(self, rel_t, p=None):
+    def _move_tick(self, rel_t, p=None) -> float:
         """ Move by some number of ticks, at speed p. To be implemented by subclasses. """
         raise NotImplementedError
 
     def move_rel_tick(self, rel_t, p=None, t=False):
         """ Move rel_t ticks (relatively), at speed p. Use default p if not given. """
-        self.curr_tick += rel_t
-
         if t:
             self._set_job(rel_t, p)
         else:
-            self._move_tick(rel_t, p)
+            self.moving = True
+            self.curr_tick += self._move_tick(rel_t, p)
+            self.moving = False
 
     def move_abs_tick(self, abs_t, p=None, t=False):
         """ Move to an absolute tick position, abs_t, at speed p. Use default p if not given. """
