@@ -18,10 +18,8 @@ class TimedControlledMotor(ControlledMotor):
         self.cutoff = True
         self.moving = False
 
-    def stop(self):
+    def _send_stop(self):
         self.cutoff = True
-        while self.is_moving():
-            pass
 
     def _set_motor_power(self, p: float):
         """ Direct set of motor power. """

@@ -40,23 +40,35 @@ class ControlledMotor(Motor, Thread):
                 last_job = self.curr_job
                 self.curr_tick += self._move_tick(*last_job)
 
-                if self.curr_job == last_job:  # Not changed during run
-                    self.curr_job = None
-                    self.moving = False
+                self.curr_job = None
+                self.moving = False
 
     def _set_job(self, rel_t, p):
+        # Stop any previous movements (will wait for moving to be set to false)
         self.stop()
+
+        # NOTE: Will not be effected by the set of these variables in the thread, as moving == False is waited for
         self.moving = True
         self.curr_job = (rel_t, p)
+
+        # Wait for the motor to start moving:
         while not self.is_moving():
+            pass
+
+    def stop(self):
+        """ Stop the motor. """
+        self._send_stop()
+
+        # Hang until stopped moving:
+        while self.is_moving():
             pass
 
     def close(self):
         self.running = False
         self.join()
 
-    def stop(self):
-        """ Stop the motor. """
+    def _send_stop(self):
+        """ Send stop to motor. """
         raise NotImplementedError
 
     def is_moving(self) -> bool:
